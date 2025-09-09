@@ -23,4 +23,4 @@ public function query($query){
 
 $db = new Database();
 
-$posts = $db->query("select * from post where id > 1")->fetch(PDO::FETCH_ASSOC);
+// $posts = $db->query("select * from post where id > 1")->fetch(PDO::FETCH_ASSOC);
