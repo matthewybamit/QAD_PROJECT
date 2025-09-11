@@ -1,23 +1,48 @@
 <?php require_once 'partials/head.php'; ?>
+<?php
+require_once 'models/SchoolQuery.php';
+
+$schoolQuery = new SchoolQuery($db);
+$result = $schoolQuery->getSchools([
+    'search' => $_GET['search'] ?? '',
+    'limit'  => (int)($_GET['limit'] ?? 10),
+    'page'   => (int)($_GET['page'] ?? 1),
+    'sort'   => $_GET['sort'] ?? 'school_name',
+    'order'  => $_GET['order'] ?? 'asc'
+]);
+
+$schools       = $result['schools'];
+$totalRecords  = $result['totalRecords'];
+$totalPages    = $result['totalPages'];
+$page          = (int)($_GET['page'] ?? 1);
+$limit         = (int)($_GET['limit'] ?? 10);
+$search        = trim($_GET['search'] ?? '');
+$sort          = $_GET['sort'] ?? 'school_name';
+$order         = $_GET['order'] ?? 'asc';
+?>
 
 <body>
 <?php require_once 'partials/nav.php'; ?>
 
-
-<div class="mt-50 ml-95 mb-2"><h1 class="text-2xl font-bold text-gray-800">PRIVATE SCHOOLS WITH GOVERNMENT AUTHORITY AS SY 2024-2025</h1></div>
-
- <div class="mt-22 ml-4 text-[#007AFF] font-bold text-2xl">
-    <?php echo "As of " . date('F j, Y'); ?>
+<div class="mt-50 ml-95 mb-2">
+  <h1 class="text-2xl font-bold text-gray-800">
+    PRIVATE SCHOOLS WITH GOVERNMENT AUTHORITY AS SY 2024-2025
+  </h1>
 </div>
 
-        <div class="bg-white overflow-hidden">
+<div class="mt-22 ml-4 text-[#007AFF] font-bold text-2xl">
+  <?php echo "As of " . date('F j, Y'); ?>
+</div>
+
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             
             <!-- Header Controls -->
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <div class="flex items-center justify-between">
                     <!-- Entries per page -->
                     <div class="flex items-center space-x-2 text-sm text-gray-600">
-            
+                        <span>Show</span>
                         <select id="entriesPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="10">10</option>
                             <option value="25">25</option>
@@ -39,8 +64,8 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead>
-                        <tr class="bg-blue-100">
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="division_office">
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="division_office">
                                 <div class="flex items-center space-x-1">
                                     <span>Division Office</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -48,7 +73,7 @@
                                     </svg>
                                 </div>
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="school_name">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="school_name">
                                 <div class="flex items-center space-x-1">
                                     <span>Name of School</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -56,7 +81,7 @@
                                     </svg>
                                 </div>
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="address">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="address">
                                 <div class="flex items-center space-x-1">
                                     <span>Address</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -64,7 +89,7 @@
                                     </svg>
                                 </div>
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="permit_no">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="permit_no">
                                 <div class="flex items-center space-x-1">
                                     <span>Permit No.</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -72,7 +97,7 @@
                                     </svg>
                                 </div>
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="program_offering">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="program_offering">
                                 <div class="flex items-center space-x-1">
                                     <span>Program Offering</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -80,15 +105,10 @@
                                     </svg>
                                 </div>
                             </th>
-                             <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="contact_details">
-                                 <div class="flex items-center space-x-1">
-                                    <span>Contact Details</span>
-                                    <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M5 12l5-5 5 5H5z"/>
-                                    </svg>
-                                </div>
+                              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="program_offering">
+                                Contact Details
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-black-700 uppercase tracking-wider cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="contact_person">
+                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 cursor-pointer hover:bg-blue-500 transition-colors duration-150" data-column="program_offering">
                                 <div class="flex items-center space-x-1">
                                     <span>Contact Person</span>
                                     <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -171,7 +191,7 @@
                                 <?= htmlspecialchars($school['division_office']) ?>
                             </td>
                             <td class="px-4 py-4 text-sm font-medium text-gray-900 border-r border-gray-200">
-                                <a href="/profiling/<?= $school['id'] ?>" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150">
+                                <a href="/school/<?= $school['id'] ?>" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150">
                                     <?= htmlspecialchars($school['school_name']) ?>
                                 </a>
                             </td>
@@ -290,8 +310,6 @@
                 </div>
             </div>
         </div>
-  
-
 
 <script src="/public/js/listing.js"></script>
 

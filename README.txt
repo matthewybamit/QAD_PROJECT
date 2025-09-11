@@ -33,3 +33,7 @@ Customization:
 
 License:
 This project is for educational purposes.
+
+
+Authentication:
+- in the Autth_toggle.php just make sure that $isAdmin = true;  // Change to false for user mode to change between user and admin

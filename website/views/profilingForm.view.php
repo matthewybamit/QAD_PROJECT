@@ -1,6 +1,6 @@
 <?php require_once 'partials/head.php'; ?>
 
-<body class="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen flex">
+<body class="bg-gradient-to-br from-white-50 to-blue-50 min-h-screen flex">
 
     <!-- Sidebar -->
     <aside class="hidden md:block w-64 bg-white shadow-xl border-r border-gray-200 h-screen sticky top-0">
@@ -39,8 +39,6 @@
             <?php endif; ?>
 
             <?php if ($school): ?>
-            <!-- Profile Card -->
-            <!-- <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200"> -->
 
                 <!-- School Header -->
                 <div class="px-8 py-10 border-b-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white flex justify-between items-center">
@@ -63,11 +61,11 @@
                     <section id="mission" class="grid md:grid-cols-2 gap-8">
                         <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-blue-700 mb-2">Mission</h2>
-                            <textarea name="mission" rows="4" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['mission'] ?? '') ?></textarea>
+                            <textarea name="mission_statement" rows="4" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['mission_statement'] ?? '') ?></textarea>
                         </div>
                         <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-blue-700 mb-2">Vision</h2>
-                            <textarea name="vision" rows="4" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['vision'] ?? '') ?></textarea>
+                            <textarea name="vision_statement" rows="4" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['vision_statement'] ?? '') ?></textarea>
                         </div>
                     </section>
 
@@ -80,26 +78,55 @@
                                 <input type="text" name="division_office" value="<?= htmlspecialchars($school['division_office']) ?>" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Founding Year</label>
+                                <input type="number" name="founding_year" value="<?= htmlspecialchars($school['founding_year'] ?? '') ?>" placeholder="e.g., 1998" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Program Offering</label>
                                 <select name="program_offering" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                                     <option value="KINDERGARTEN" <?= $school['program_offering'] === 'KINDERGARTEN' ? 'selected' : '' ?>>Kindergarten</option>
                                     <option value="ELEMENTARY" <?= $school['program_offering'] === 'ELEMENTARY' ? 'selected' : '' ?>>Elementary</option>
                                     <option value="JUNIOR HIGH SCHOOL" <?= $school['program_offering'] === 'JUNIOR HIGH SCHOOL' ? 'selected' : '' ?>>Junior High School</option>
                                     <option value="SENIOR HIGH SCHOOL" <?= $school['program_offering'] === 'SENIOR HIGH SCHOOL' ? 'selected' : '' ?>>Senior High School</option>
+                                    <option value="UNIVERSITY" <?= $school['program_offering'] === 'UNIVERSITY' ? 'selected' : '' ?>>University</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Student Population</label>
+                                <input type="number" name="student_population" value="<?= htmlspecialchars($school['student_population'] ?? '') ?>" placeholder="e.g., 2500" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">School Name</label>
                                 <input type="text" name="school_name" value="<?= htmlspecialchars($school['school_name']) ?>" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">School Description</label>
+                                <textarea name="school_description" rows="3" placeholder="Brief description of the school..." class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['school_description'] ?? '') ?></textarea>
+                            </div>
+                            <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                                 <textarea name="address" rows="3" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['address']) ?></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                                <input type="url" name="website_url" value="<?= htmlspecialchars($school['website_url'] ?? '') ?>" placeholder="https://example.com" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Facebook URL</label>
+                                <input type="url" name="facebook_url" value="<?= htmlspecialchars($school['facebook_url'] ?? '') ?>" placeholder="https://facebook.com/schoolpage" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Permit Number(s)</label>
                                 <input type="text" name="permit_no" value="<?= htmlspecialchars($school['permit_no']) ?>" placeholder="e.g., K-0285 s. 2024 R-1, E-0221 s. 2024 R-1" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
                                 <p class="mt-1 text-xs text-gray-500">Separate multiple permits with commas</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Accreditation & Recognition</label>
+                                <input type="text" name="accreditation" value="<?= htmlspecialchars($school['accreditation'] ?? '') ?>" placeholder="e.g., TESDA Accredited, JICA Partnership" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">School History</label>
+                                <textarea name="school_history" rows="4" placeholder="History and background of the institution..." class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['school_history'] ?? '') ?></textarea>
                             </div>
                         </div>
                     </section>
@@ -138,7 +165,24 @@
                     <!-- Facilities -->
                     <section id="facilities">
                         <h2 class="text-2xl font-bold text-gray-900 border-l-4 border-blue-600 pl-3 mb-6">School Facilities</h2>
-                        <div class="bg-gray-50 p-6 rounded-xl shadow-sm text-gray-600">Dynamic tables can go here...</div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Faculty Count</label>
+                                <input type="number" name="faculty_count" value="<?= htmlspecialchars($school['faculty_count'] ?? '') ?>" placeholder="e.g., 150" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Recognition/Awards</label>
+                                <input type="text" name="recognition" value="<?= htmlspecialchars($school['recognition'] ?? '') ?>" placeholder="e.g., Model Technology-Based Institution" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Facilities & Infrastructure</label>
+                                <textarea name="facilities" rows="3" placeholder="List of available facilities (classrooms, laboratories, library, etc.)" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['facilities'] ?? '') ?></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Recent Achievements</label>
+                                <textarea name="achievements" rows="3" placeholder="Recent awards, recognitions, and achievements..." class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['achievements'] ?? '') ?></textarea>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- Contact Info -->
@@ -181,43 +225,12 @@
                         <button type="submit" class="px-6 py-2.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">Save Changes</button>
                     </div>
                 </form>
-            </div>
             <?php endif; ?>
         </div>
     </main>
 
     <!-- JS -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Smooth hover on inputs
-        document.querySelectorAll('input, textarea, select').forEach(el => {
-            el.classList.add('transition-all', 'duration-200');
-        });
+    <script src="/public/js/hoveringInputs.js"></script>
 
-        // Phone formatting
-        const phone = document.querySelector('#contact_phone');
-        if (phone) {
-            phone.addEventListener('input', function () {
-                let v = this.value.replace(/\D/g, '');
-                if (v.length >= 11) {
-                    v = v.replace(/(\d{4})(\d{3})(\d{4})/, '($1)-$2-$3');
-                    this.value = v;
-                }
-            });
-        }
-    });
-    </script>
-    <script>
-function scrollToCenter(id) {
-  const section = document.getElementById(id);
-  if (section) {
-    section.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center', // centers vertically
-      inline: 'nearest'
-    });
-  }
-}
-</script>
 </body>
 </html>
