@@ -130,7 +130,7 @@ class SchoolQuery
                 'contact_phone', 'contact_email', 'contact_person', 'school_description',
                 'school_history', 'mission_statement', 'vision_statement', 'founding_year',
                 'accreditation', 'recognition', 'website_url', 'facebook_url',
-                'student_population', 'faculty_count', 'facilities', 'achievements'
+                'student_population', 'faculty_count', 'facilities', 'achievements', 'school_logo'
             ];
 
             foreach ($allowedFields as $field) {
@@ -158,6 +158,193 @@ class SchoolQuery
         } catch (Exception $e) {
             throw new Exception("Error updating school: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Handle logo upload for a school
+     */
+    public function handleLogoUpload($schoolId, $logoFile, $removeLogo = false)
+    {
+        try {
+            // If removing logo
+            if ($removeLogo) {
+                $this->removeSchoolLogo($schoolId);
+                return ['success' => true, 'filename' => null, 'message' => 'Logo removed successfully'];
+            }
+
+            // If no file uploaded, return success with no changes
+            if (!$logoFile || $logoFile['error'] === UPLOAD_ERR_NO_FILE) {
+                return ['success' => true, 'filename' => null, 'message' => 'No logo file uploaded'];
+            }
+
+            // Validate file upload
+            if ($logoFile['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File upload error occurred");
+            }
+
+            // Validate file size (2MB max)
+            if ($logoFile['size'] > 2 * 1024 * 1024) {
+                throw new Exception("File size too large. Maximum 2MB allowed.");
+            }
+
+            // Validate file type
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($logoFile['type'], $allowedTypes)) {
+                throw new Exception("Invalid file type. Only JPG, PNG, GIF, and WebP allowed.");
+            }
+
+            // Validate image
+            $imageInfo = getimagesize($logoFile['tmp_name']);
+            if (!$imageInfo) {
+                throw new Exception("Uploaded file is not a valid image.");
+            }
+
+            // Create upload directory if it doesn't exist
+            $uploadDir = __DIR__ . '/../assets/images/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $extension = strtolower(pathinfo($logoFile['name'], PATHINFO_EXTENSION));
+            $filename = 'school_' . $schoolId . '_' . time() . '.' . $extension;
+            $filepath = $uploadDir . $filename;
+
+            // Remove old logo first
+            $this->removeSchoolLogo($schoolId);
+
+            // Move uploaded file
+            if (!move_uploaded_file($logoFile['tmp_name'], $filepath)) {
+                throw new Exception("Failed to move uploaded file.");
+            }
+
+            // Resize image if needed
+            $this->resizeImage($filepath, $extension);
+
+            return [
+                'success' => true,
+                'filename' => $filename,
+                'message' => 'Logo uploaded successfully'
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Remove school logo
+     */
+    private function removeSchoolLogo($schoolId)
+    {
+        try {
+            // Get current logo filename
+            $query = "SELECT school_logo FROM schools WHERE id = :id";
+            $stmt = $this->db->connection->prepare($query);
+            $stmt->bindParam(':id', $schoolId, PDO::PARAM_INT);
+            $stmt->execute();
+            $school = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($school && !empty($school['school_logo'])) {
+                $filepath = __DIR__ . '/../assets/images/' . $school['school_logo'];
+                if (file_exists($filepath)) {
+                    unlink($filepath);
+                }
+            }
+
+            // Clear logo from database
+            $updateQuery = "UPDATE schools SET school_logo = NULL WHERE id = :id";
+            $updateStmt = $this->db->connection->prepare($updateQuery);
+            $updateStmt->bindParam(':id', $schoolId, PDO::PARAM_INT);
+            $updateStmt->execute();
+
+        } catch (Exception $e) {
+            // Log error but don't throw - this shouldn't stop the main operation
+            error_log("Error removing logo: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Resize image for web optimization
+     */
+    private function resizeImage($filepath, $extension)
+    {
+        $maxWidth = 400;
+        $maxHeight = 400;
+
+        // Get current dimensions
+        list($width, $height) = getimagesize($filepath);
+
+        // Calculate new dimensions
+        $ratio = min($maxWidth / $width, $maxHeight / $height);
+        $newWidth = (int)($width * $ratio);
+        $newHeight = (int)($height * $ratio);
+
+        // Don't resize if image is already smaller
+        if ($ratio >= 1) {
+            return;
+        }
+
+        // Create image resource
+        switch ($extension) {
+            case 'jpg':
+            case 'jpeg':
+                $source = imagecreatefromjpeg($filepath);
+                break;
+            case 'png':
+                $source = imagecreatefrompng($filepath);
+                break;
+            case 'gif':
+                $source = imagecreatefromgif($filepath);
+                break;
+            case 'webp':
+                $source = imagecreatefromwebp($filepath);
+                break;
+            default:
+                return;
+        }
+
+        if (!$source) {
+            return;
+        }
+
+        // Create new image
+        $destination = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Preserve transparency for PNG and GIF
+        if ($extension === 'png' || $extension === 'gif') {
+            imagealphablending($destination, false);
+            imagesavealpha($destination, true);
+            $transparent = imagecolorallocatealpha($destination, 255, 255, 255, 127);
+            imagefilledrectangle($destination, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        // Resize
+        imagecopyresampled($destination, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        // Save resized image
+        switch ($extension) {
+            case 'jpg':
+            case 'jpeg':
+                imagejpeg($destination, $filepath, 90);
+                break;
+            case 'png':
+                imagepng($destination, $filepath, 9);
+                break;
+            case 'gif':
+                imagegif($destination, $filepath);
+                break;
+            case 'webp':
+                imagewebp($destination, $filepath, 90);
+                break;
+        }
+
+        // Clean up
+        imagedestroy($source);
+        imagedestroy($destination);
     }
 
     /**

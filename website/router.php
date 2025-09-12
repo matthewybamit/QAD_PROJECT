@@ -6,9 +6,10 @@ require_once 'auth_toggle.php'; // Your authentication snippet
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
 
 $routings = [
-    '/' => 'controller/listing.php',
+    '/' => 'controller/landing.php',
     '/listing' => 'controller/listing.php',
     '/404' => '404.php',
+    '/landing' => 'controller/landing.php',
 ];
 
 // Handle dynamic routes with parameters

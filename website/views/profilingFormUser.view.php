@@ -30,7 +30,7 @@ if ($schoolId > 0) {
 ?>
 
 <?php if ($error): ?>
-<div class="min-h-screen bg-gray-50 flex items-center justify-center mt-50">
+<div class="min-h-screen bg-gray-50 flex items-center justify-center">
     <div class="text-center">
         <div class="mb-4">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@ if ($schoolId > 0) {
         <h3 class="text-lg font-medium text-gray-900">School Not Found</h3>
         <p class="mt-1 text-sm text-gray-600"><?= htmlspecialchars($error) ?></p>
         <div class="mt-6">
-            <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+            <a href="/listing" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                 Back to Schools
             </a>
         </div>
@@ -49,27 +49,30 @@ if ($schoolId > 0) {
 <?php else: ?>
 
 <!-- Hero Section -->
-<div class="relative bg-gradient-to-br from-blue-600 via-blue-700 to-red-600 overflow-hidden mt-30">
+<div class="relative bg-gradient-to-br from-blue-600 via-blue-700 to-red-600 overflow-hidden ">
     <!-- Background Image Overlay -->
     <div class="absolute inset-0 bg-black opacity-40"></div>
     
     <!-- Decorative Wave -->
-    <div class="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1440 320" class="w-full h-20">
-            <path fill="#ffffff" fill-opacity="1" d="m0,96l48,80c48,80 144,240 240,250.7c96,10.7 192,-138.7 288,-160c96,-21.3 192,85.3 288,138.7c96,53.3 192,53.3 240,53.3l48,0l0,160l-1440,0z"></path>
-        </svg>
-    </div>
+
     
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="flex flex-col lg:flex-row items-center justify-between">
             <!-- School Logo and Info -->
             <div class="text-center lg:text-left mb-8 lg:mb-0">
                 <!-- Logo Placeholder -->
-                <div class="w-20 h-20 mx-auto lg:mx-0 mb-4 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <svg class="w-12 h-12 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 100 2h14a1 1 0 100-2V8a1 1 0 00.496-1.868l-7-4zM6 9a1 1 0 000 2h2a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
+<div class="w-20 h-20 mx-auto lg:mx-0 mb-4 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+    <?php if (!empty($school['school_logo'])): ?>
+        <img src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+             alt="<?= htmlspecialchars($school['school_name']) ?> Logo" 
+             class="w-full h-full object-cover rounded-full">
+    <?php else: ?>
+        <svg class="w-12 h-12 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 100 2h14a1 1 0 100-2V8a1 1 0 00.496-1.868l-7-4zM6 9a1 1 0 000 2h2a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+        </svg>
+    <?php endif; ?>
+</div>
+
                 
                 <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2">
                     <?= strtoupper(htmlspecialchars($school['school_name'])) ?>
@@ -83,9 +86,11 @@ if ($schoolId > 0) {
                 </div>
             </div>
             
+    <!-- Decorative Wave Image -->
+  
             <!-- Back Button -->
-            <div class="flex-shrink-0">
-                <a href="/" class="inline-flex items-center px-6 py-3 border border-white text-white bg-transparent hover:bg-white hover:text-blue-600 font-medium rounded-lg transition-colors duration-200">
+            <div class="flex-shrink-0 relative z-10">
+                <a href="/listing" class="inline-flex items-center px-6 mb-15 py-3 border border-white text-white bg-transparent hover:bg-white hover:text-blue-600 font-medium rounded-lg transition-colors duration-200">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -94,59 +99,77 @@ if ($schoolId > 0) {
             </div>
         </div>
     </div>
+      <div class="absolute bottom-0 left-0 right-0">
+        <img src="/assets/images/wave.png" alt="wave" class="w-6000 h-50" />
+    </div>
 </div>
 
 <!-- Main Content -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- School Profile Section -->
-    <div class="mb-12">
-        <div class="flex items-center mb-8">
-            <div class="h-px bg-gray-300 flex-1"></div>
-            <div class="px-6">
-                <h2 class="text-2xl font-bold text-gray-900 uppercase tracking-wider">School Profile</h2>
-            </div>
-            <div class="h-px bg-gray-300 flex-1"></div>
-        </div>
+<!-- School Profile Section -->
+<section id="school-profile" class="mb-12">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 flex flex-col md:flex-row items-start">
         
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-            <div class="prose max-w-none">
+        <!-- Left Column: Vertical Title -->
+        <aside class="flex items-center md:flex-col md:items-start md:pr-8 mb-6 md:mb-0 border-r-4 border-black pr-6">
+            <h2 class="text-3xl font-extrabold text-gray-900 uppercase tracking-wider leading-tight">
+                School <br /> Profile
+            </h2>
+        </aside>
+        
+        <!-- Right Column: Content -->
+        <div class="flex-1 md:pl-8">
+            
+            <!-- Description -->
+            <article class="mb-6">
                 <p class="text-gray-700 leading-relaxed text-lg">
                     <?= !empty($school['school_description']) ? 
                         htmlspecialchars($school['school_description']) : 
                         'A distinguished educational institution committed to academic excellence and student development.' ?>
                 </p>
-            </div>
+            </article>
             
             <!-- Key Information Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Founded -->
                 <?php if (!empty($school['founding_year'])): ?>
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <div class="text-3xl font-bold text-blue-600"><?= $school['founding_year'] ?></div>
+                <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Founded</div>
+                    <div class="text-2xl font-bold text-blue-600"><?= $school['founding_year'] ?></div>
                 </div>
                 <?php endif; ?>
                 
+                <!-- Students -->
                 <?php if (!empty($school['student_population'])): ?>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <div class="text-3xl font-bold text-green-600"><?= number_format($school['student_population']) ?></div>
+                <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Students</div>
+                    <div class="text-2xl font-bold text-green-600"><?= number_format($school['student_population']) ?></div>
                 </div>
                 <?php endif; ?>
                 
+                <!-- Faculty -->
                 <?php if (!empty($school['faculty_count'])): ?>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <div class="text-3xl font-bold text-purple-600"><?= number_format($school['faculty_count']) ?></div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Faculty</div>
+                    <div class="text-2xl font-bold text-purple-600"><?= number_format($school['faculty_count']) ?></div>
                 </div>
                 <?php endif; ?>
                 
-                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                    <div class="text-xl font-bold text-orange-600 uppercase"><?= htmlspecialchars($school['program_offering']) ?></div>
+                <!-- Program Level -->
+                <?php if (!empty($school['program_offering'])): ?>
+                <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Program Level</div>
+                    <div class="text-xl font-bold text-orange-600 uppercase">
+                        <?= htmlspecialchars($school['program_offering']) ?>
+                    </div>
                 </div>
+                <?php endif; ?>
+            
             </div>
         </div>
     </div>
+</section>
 
     <!-- School History Section -->
     <div class="mb-12">

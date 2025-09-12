@@ -1,26 +1,28 @@
 <?php require_once 'partials/head.php'; ?>
 
-<body class="bg-gradient-to-br from-white-50 to-blue-50 min-h-screen flex">
+<body class="bg-gradient-to-br from-white-50 to-blue-50 min-h-screen flex flex-col lg:flex-row">
 
-    <!-- Sidebar -->
-    <aside class="hidden md:block w-64 bg-white shadow-xl border-r border-gray-200 h-screen sticky top-0">
-        <div class="px-6 py-6 border-b">
-            <h2 class="text-lg font-bold text-blue-700">School Profile</h2>
-            <p class="text-sm text-gray-500">Manage details</p>
-        </div>
-        <nav class="p-4 space-y-2 ">
-            <a href="#mission" class="block px-3 py-2 rounded-md hover:bg-blue-50">Mission & Vision</a>
-            <a href="#basic" class="block px-3 py-2 rounded-md hover:bg-blue-50">Basic Information</a>
-            <a href="#exec" class="block px-3 py-2 rounded-md hover:bg-blue-50">Executive Officials</a>
-            <a href="#programs" class="block px-3 py-2 rounded-md hover:bg-blue-50">Program Offerings</a>
-            <a href="#facilities" class="block px-3 py-2 rounded-md hover:bg-blue-50">Facilities</a>
-            <a href="#contact" class="block px-3 py-2 rounded-md hover:bg-blue-50">Contact</a>
-            <a href="#record" class="block px-3 py-2 rounded-md hover:bg-blue-50">Record Info</a>
-        </nav>
-    </aside>
+    <!-- Sidebar - Hide on mobile, show on large screens -->
+    <div class="hidden lg:block">
+        <?php include 'partials/profilingNav.php'; ?>
+    </div>
+
+    <!-- Mobile Header - Show only on mobile -->
+    <div class="lg:hidden bg-blue-900 text-white p-4 sticky top-0 z-50">
+        <button id="mobile-menu-button" class="text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div id="mobile-menu" class="lg:hidden fixed inset-0 bg-blue-900 bg-opacity-95 z-40 transform -translate-x-full transition-transform duration-200">
+        <?php include 'partials/profilingNav.php'; ?>
+    </div>
 
     <!-- Main Content -->
-    <main class="flex-1 p-6 md:p-10">
+    <main class="flex-1 p-4 md:p-6 lg:p-10">
         <div class="max-w-5xl mx-auto">
 
             <!-- Alerts -->
@@ -40,25 +42,88 @@
 
             <?php if ($school): ?>
 
-                <!-- School Header -->
-                <div class="px-8 py-10 border-b-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white flex justify-between items-center">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-gray-900"><?= htmlspecialchars($school['school_name']) ?></h1>
-                        <p class="mt-1 text-gray-600">ID: <?= $school['id'] ?></p>
+                <!-- School Header with Logo -->
+                <div class="px-4 md:px-8 py-6 md:py-10 border-b-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:space-x-6">
+                            <!-- Logo section responsive adjustments -->
+                            <div class="flex-shrink-0 mb-4 md:mb-0">
+                                <?php if (!empty($school['school_logo'])): ?>
+                                    <img src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+                                         alt="<?= htmlspecialchars($school['school_name']) ?> Logo" 
+                                         class="w-20 h-20 object-contain rounded-lg border-2 border-gray-200 bg-white p-2">
+                                <?php else: ?>
+                                    <div class="w-20 h-20 bg-gray-200 rounded-lg border-2 border-gray-300 flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900"><?= htmlspecialchars($school['school_name']) ?></h1>
+                                <p class="mt-1 text-gray-600">ID: <?= $school['id'] ?></p>
+                            </div>
+                        </div>
+                        <!-- Back button responsive positioning -->
+                        <a href="/listing" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white shadow-sm hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to Listing
+                        </a>
                     </div>
-                    <a href="/" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white shadow-sm hover:bg-gray-50 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Back to Listing
-                    </a>
                 </div>
 
-                <!-- Main Form -->
-                <form method="POST" class="p-8 space-y-12">
+                <!-- Main Form with file upload -->
+                <form method="POST" enctype="multipart/form-data" class="p-4 md:p-8 space-y-8 md:space-y-12">
+
+                    <!-- School Logo Upload Section -->
+                    <section id="logo" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h2 class="text-xl font-bold text-blue-700 mb-4">School Logo</h2>
+                        <div class="flex items-start space-x-6">
+                            <!-- Current Logo Preview -->
+                            <div class="flex-shrink-0">
+                                <div id="logo-preview" class="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                                    <?php if (!empty($school['school_logo'])): ?>
+                                        <img id="current-logo" src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+                                             alt="Current Logo" 
+                                             class="w-full h-full object-contain rounded-lg">
+                                    <?php else: ?>
+                                        <div id="no-logo-placeholder" class="text-center text-gray-400">
+                                            <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <p class="text-sm">No Logo</p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Logo Upload Controls -->
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Upload New Logo</label>
+                                <input type="file" name="school_logo" id="school-logo-input" 
+                                       accept="image/*" 
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Supported formats: JPG, PNG, GIF. Max size: 2MB. Recommended: 200x200px square format.
+                                </p>
+                                <?php if (!empty($school['school_logo'])): ?>
+                                    <div class="mt-3">
+                                        <p class="text-sm text-gray-600">Current logo: <strong><?= htmlspecialchars($school['school_logo']) ?></strong></p>
+                                        <label class="inline-flex items-center mt-2">
+                                            <input type="checkbox" name="remove_logo" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-red-600">Remove current logo</span>
+                                        </label>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </section>
 
                     <!-- Mission & Vision -->
-                    <section id="mission" class="grid md:grid-cols-2 gap-8">
+                    <section id="mission" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                         <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-blue-700 mb-2">Mission</h2>
                             <textarea name="mission_statement" rows="4" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($school['mission_statement'] ?? '') ?></textarea>
@@ -69,10 +134,10 @@
                         </div>
                     </section>
 
-                    <!-- Basic Info -->
+                    <!-- Basic Info Section -->
                     <section id="basic">
-                        <h2 class="text-2xl font-bold text-gray-900 border-l-4 border-blue-600 pl-3 mb-6">Basic Information</h2>
-                        <div class="grid md:grid-cols-2 gap-6">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 border-l-4 border-blue-600 pl-3 mb-4 md:mb-6">Basic Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Division Office</label>
                                 <input type="text" name="division_office" value="<?= htmlspecialchars($school['division_office']) ?>" class="w-full rounded-md border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500">
@@ -219,10 +284,16 @@
                     </section>
                     <?php endif; ?>
 
-                    <!-- Floating Action Bar -->
-                    <div class="sticky bottom-0 bg-white border-t border-gray-200 py-4 px-6 flex justify-end space-x-4">
-                        <button type="button" onclick="history.back()" class="px-6 py-2.5 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50">Cancel</button>
-                        <button type="submit" class="px-6 py-2.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">Save Changes</button>
+                    <!-- Floating Action Bar - Adjust for mobile -->
+                    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-end space-x-4 z-40">
+                        <button type="button" onclick="history.back()" 
+                                class="px-4 md:px-6 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="px-4 md:px-6 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">
+                            Save Changes
+                        </button>
                     </div>
                 </form>
             <?php endif; ?>
@@ -231,6 +302,19 @@
 
     <!-- JS -->
     <script src="/public/js/hoveringInputs.js"></script>
+    <!-- Logo Preview Script -->
+    <script src="/public/js/logoPreview.js"></script>   
 
+    <!-- Add Mobile Menu JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', function() {
+            mobileMenu.classList.toggle('-translate-x-full');
+        });
+    });
+    </script>
 </body>
 </html>
