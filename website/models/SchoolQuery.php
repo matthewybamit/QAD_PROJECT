@@ -200,7 +200,7 @@ class SchoolQuery
             }
 
             // Create upload directory if it doesn't exist
-            $uploadDir = __DIR__ . '/../assets/images/';
+            $uploadDir = __DIR__ . '/../assets/logos/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -249,7 +249,7 @@ class SchoolQuery
             $school = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($school && !empty($school['school_logo'])) {
-                $filepath = __DIR__ . '/../assets/images/' . $school['school_logo'];
+                $filepath = __DIR__ . '/../assets/logo/' . $school['school_logo'];
                 if (file_exists($filepath)) {
                     unlink($filepath);
                 }

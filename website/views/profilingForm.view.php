@@ -49,7 +49,7 @@
                             <!-- Logo section responsive adjustments -->
                             <div class="flex-shrink-0 mb-4 md:mb-0">
                                 <?php if (!empty($school['school_logo'])): ?>
-                                    <img src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+                                    <img src="/assets/logos/<?= htmlspecialchars($school['school_logo']) ?>" 
                                          alt="<?= htmlspecialchars($school['school_name']) ?> Logo" 
                                          class="w-20 h-20 object-contain rounded-lg border-2 border-gray-200 bg-white p-2">
                                 <?php else: ?>
@@ -73,7 +73,7 @@
                             Back to Listing
                         </a>
                     </div>
-                </div>
+                </div>  
 
                 <!-- Main Form with file upload -->
                 <form method="POST" enctype="multipart/form-data" class="p-4 md:p-8 space-y-8 md:space-y-12">
@@ -86,7 +86,7 @@
                             <div class="flex-shrink-0">
                                 <div id="logo-preview" class="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
                                     <?php if (!empty($school['school_logo'])): ?>
-                                        <img id="current-logo" src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+                                        <img id="current-logo" src="/assets/logos/<?= htmlspecialchars($school['school_logo']) ?>" 
                                              alt="Current Logo" 
                                              class="w-full h-full object-contain rounded-lg">
                                     <?php else: ?>

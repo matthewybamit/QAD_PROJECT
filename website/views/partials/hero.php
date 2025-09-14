@@ -48,7 +48,21 @@
 <script src="/public/js/time.js"></script>
 
 
+<!-- Section Title -->
+<div class="relative w-full max-w-7xl mx-auto mt-16 mb-8 text-center">
+  <!-- Decorative lines -->
+  <div class="flex items-center justify-center gap-4">
+    <div class="h-0.5 w-12 bg-yellow-400"></div>
+    <h2 class="text-3xl font-bold text-gray-800">
+      Guide For Application
+    </h2>
+    <div class="h-0.5 w-12 bg-yellow-400"></div>
+  </div>
+  <!-- Optional subtitle -->
+  <p class="mt-2 text-gray-600">Swipe or use arrows to navigate</p>
+</div>
 
+<!-- Section Title -->
 
 <!-- 3D Coverflow Carousel -->
 <div class="relative w-full max-w-7xl mx-auto mt-12 px-6">
@@ -83,7 +97,7 @@
 
 <style>
   .perspective {
-    perspective: 1500px; /* More depth for larger container */
+    perspective:2500px; /* More depth for larger container */
   }
 </style>
 

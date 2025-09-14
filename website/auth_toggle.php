@@ -5,7 +5,7 @@
 // ========================================
 // TOGGLE THIS LINE TO SWITCH USER TYPES
 // ========================================
-$isAdmin = false;  // Change to false for user mode
+$isAdmin = true;  // Change to false for user mode
 // ========================================
 
 // Optional: You can also check for a URL parameter for quick testing

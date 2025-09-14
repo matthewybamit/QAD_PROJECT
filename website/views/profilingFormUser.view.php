@@ -63,7 +63,7 @@ if ($schoolId > 0) {
                 <!-- Logo Placeholder -->
 <div class="w-20 h-20 mx-auto lg:mx-0 mb-4 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
     <?php if (!empty($school['school_logo'])): ?>
-        <img src="/assets/images/<?= htmlspecialchars($school['school_logo']) ?>" 
+        <img src="/assets/logos/<?= htmlspecialchars($school['school_logo']) ?>" 
              alt="<?= htmlspecialchars($school['school_name']) ?> Logo" 
              class="w-full h-full object-cover rounded-full">
     <?php else: ?>
