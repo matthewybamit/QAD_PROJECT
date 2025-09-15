@@ -12,9 +12,46 @@
         </div>
       </div>
 
+      <!-- Right: User Profile -->
+      <div class="flex items-center space-x-4">
+        <!-- User Avatar and Dropdown -->
+        <div class="relative inline-block text-left">
+          <button id="userMenuButton" class="flex items-center space-x-3 focus:outline-none">
+            <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center">
+              <span class="text-white font-medium">
+                <?php echo isset($_SESSION['user_name']) ? substr($_SESSION['user_name'], 0, 1) : 'G'; ?>
+              </span>
+            </div>
+            <div class="hidden md:block text-right">
+              <div class="text-white"><?php echo $_SESSION['user_name'] ?? 'Guest'; ?></div>
+              <div class="text-blue-200 text-sm"><?php echo $_SESSION['user_email'] ?? ''; ?></div>
+            </div>
+            <svg class="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <!-- Profile Dropdown -->
+          <div id="userMenuDropdown" 
+               class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+            <div class="px-4 py-2 border-b">
+              <p class="text-sm text-gray-500">Signed in as</p>
+              <p class="text-sm font-medium text-gray-900 truncate">
+                <?php echo $_SESSION['user_email'] ?? ''; ?>
+              </p>
+            </div>
+            <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">Your Profile</a>
+            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">Settings</a>
+            <div class="border-t">
+              <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign out</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </nav>
+
 <!-- Sub Navigation Links -->
 <div class="bg-white shadow relative">
   <div class="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,5 +139,20 @@
 
   mobileDropdownButton.addEventListener('click', () => {
     mobileDropdownMenu.classList.toggle('hidden');
+  });
+
+  // User profile dropdown toggle
+  const userMenuButton = document.getElementById("userMenuButton");
+  const userMenuDropdown = document.getElementById("userMenuDropdown");
+
+  userMenuButton.addEventListener("click", () => {
+    userMenuDropdown.classList.toggle("hidden");
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!userMenuButton.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+      userMenuDropdown.classList.add("hidden");
+    }
   });
 </script>

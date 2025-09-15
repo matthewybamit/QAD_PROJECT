@@ -1,26 +1,46 @@
 <?php 
+// config/db.php
+// Updated to use environment variables
 
-class Database{
-public $connection;
+// Load environment variables
+require_once __DIR__ . '/env.php';
 
-public function __construct(){
-        $dsn = "mysql:host=localhost;port=3306;dbname=myapp;charset=utf8mb4";
+class Database {
+    public $connection;
 
-        $this->connection = new PDO($dsn, 'root');
+    public function __construct() {
+        $host = env('DB_HOST', 'localhost');
+        $port = env('DB_PORT', '3306');
+        $dbname = env('DB_NAME', 'myapp');
+        $charset = env('DB_CHARSET', 'utf8mb4');
+        $username = env('DB_USER', 'root');
+        $password = env('DB_PASS', '');
+
+        $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset={$charset}";
+
+        try {
+            $this->connection = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Database connection failed: " . $e->getMessage());
+        }
+    }
+
+    public function query($query, $params = []) {
+        try {
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            return $statement;
+        } catch (PDOException $e) {
+            throw new Exception("Query failed: " . $e->getMessage());
+        }
+    }
 }
-public function query($query){
 
-
-        $statement = $this->connection->prepare($query);
-
-        $statement->execute();
-
-       return $statement;
-
-}
-
-}
-
+// Create global database instance
 $db = new Database();
-
-// $posts = $db->query("select * from post where id > 1")->fetch(PDO::FETCH_ASSOC);
+$pdo = $db->connection; // For backward compatibility
+?>
