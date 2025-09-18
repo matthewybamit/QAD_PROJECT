@@ -1,5 +1,6 @@
 <?php require_once 'partials/head.php'; ?>
 
+    <!-- /views/profilingEdit.view.php -->
 <body class="bg-gradient-to-br from-white-50 to-blue-50 min-h-screen flex flex-col lg:flex-row">
 
     <!-- Sidebar - Hide on mobile, show on large screens -->

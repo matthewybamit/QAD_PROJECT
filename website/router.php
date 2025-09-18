@@ -1,76 +1,136 @@
 <?php
-// router.php
-// Fixed to prevent redirect loops
-
+// router.php - Updated: landing page instead of redirecting to login
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
 
-// Define public routes first
-$publicRoutes = [
-    '/login',
-    '/auth/callback',
-    '/logout'
-];
+// Define public routes
+$publicRoutes = ['/login', '/auth/callback', '/logout'];
 
-// Check if current route requires authentication
-if (!in_array($uri, $publicRoutes)) {
+// Check authentication for protected routes (non-admin)
+if (!in_array($uri, $publicRoutes) && strpos($uri, '/admin/') !== 0) {
     require_once 'models/GoogleAuth.php';
     
     if (!GoogleAuth::isLoggedIn()) {
-        if ($uri !== '/login') {
-            header('Location: /login');
-            exit;
-        }
-    } elseif ($uri === '/login') {
-        // If user is logged in and tries to access login page
-        header('Location: /');
+        // Instead of redirecting, show landing page
+        require 'controller/landing.php';
         exit;
     }
 }
 
-// Define routes FIRST
+// Define routes
 $routings = [
-    // Auth routes (must be accessible without login)
     '/login' => 'controller/auth/login.php',
-    '/auth/callback' => 'controller/auth/callback.php',
+    '/auth/callback' => 'controller/auth/callback.php', 
     '/logout' => 'controller/auth/logout.php',
-    
-    // Protected routes
     '/' => 'controller/landing.php',
     '/landing' => 'controller/landing.php',
     '/listing' => 'controller/listing.php',
-    '/404' => '404.php',
+    '/profile' => 'controller/profile.php',
     
-    // Additional routes
-    '/profile' => 'views/profile.view.php',
+    // Admin routes
+    '/admin/permissions' => 'controller/admin/permissions.php',
+    '/admin/security' => 'controller/admin/security.php',
+    '/admin/logs' => 'controller/admin/logs.php',
+    
+    '/404' => '404.php'
 ];
 
-// Handle dynamic school routes first (before authentication check)
+// Handle school routes with permission checking
 if (preg_match('/^\/school\/(\d+)$/', $uri, $matches)) {
     $_GET['id'] = $matches[1];
+    $schoolId = $matches[1];
     
-    // Include Google Auth only when needed
     require_once 'models/GoogleAuth.php';
+    require_once 'models/SchoolEditPermissions.php';
     
-    // Check authentication for school routes
-    if (!GoogleAuth::isLoggedIn()) {
-        header('Location: /login');
-        exit;
+    $currentUser = GoogleAuth::isLoggedIn() ? GoogleAuth::getCurrentUser() : null;
+    $editPermissions = new SchoolEditPermissions($db->connection);
+    
+    $canEdit = false;
+    if ($currentUser) {
+        if ($currentUser['role'] === 'admin') {
+            require_once 'models/AdminSecurity.php';
+            $adminSecurity = new AdminSecurity($db->connection);
+            if ($adminSecurity->verifyAdminAccess($currentUser['id'])) {
+                $canEdit = true;
+                $adminSecurity->logAdminActivity($currentUser['id'], 'school_edit_access', "Accessed school ID: $schoolId");
+            }
+        } else {
+            $canEdit = $editPermissions->canUserEditSchool($currentUser['id'], $schoolId);
+        }
     }
-    
-    // Route based on user role
-    if (GoogleAuth::isAdmin()) {
-        require 'controller/profilingForm.php';
+
+    if ($canEdit) {
+        require 'controller/profilingEdit.php';
     } else {
         require 'controller/profilingFormUser.php';
     }
-    exit; // Important: stop execution here
+    exit;
 }
 
-// Handle regular routes
+// Handle permission request (POST)
+if ($uri === '/request-permission' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once 'models/GoogleAuth.php';
+    require_once 'models/SchoolEditPermissions.php';
+    
+    if (!GoogleAuth::isLoggedIn()) {
+        // Stay on landing instead of redirect
+        require 'controller/landing.php';
+        exit;
+    }
+    
+    // CSRF check
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['error'] = 'Invalid request.';
+        require 'controller/landing.php';
+        exit;
+    }
+    
+    $currentUser = GoogleAuth::getCurrentUser();
+    $editPermissions = new SchoolEditPermissions($db->connection);
+    $schoolId = filter_var($_POST['school_id'], FILTER_VALIDATE_INT);
+    $reason = trim($_POST['reason'] ?? '');
+    
+    if ($schoolId && strlen($reason) >= 10) {
+        $result = $editPermissions->requestEditPermission($currentUser['id'], $schoolId, $reason);
+        $_SESSION['flash_message'] = $result['message'];
+        $_SESSION['flash_type'] = $result['success'] ? 'success' : 'error';
+    } else {
+        $_SESSION['flash_message'] = 'Please provide a detailed reason (minimum 10 characters).';
+        $_SESSION['flash_type'] = 'error';
+    }
+    
+    require 'controller/landing.php';
+    exit;
+}
+
+// Handle admin routes (with security checks)
+if (strpos($uri, '/admin/') === 0) {
+    require_once 'models/GoogleAuth.php';
+    require_once 'models/AdminSecurity.php';
+    
+    if (!GoogleAuth::isAdmin()) {
+        $_SESSION['error'] = 'Access denied.';
+        require 'controller/landing.php';
+        exit;
+    }
+    
+    $currentUser = GoogleAuth::getCurrentUser();
+    $adminSecurity = new AdminSecurity($db->connection);
+    
+    if (!$adminSecurity->verifyAdminAccess($currentUser['id'])) {
+        session_destroy();
+        require 'controller/landing.php';
+        exit;
+    }
+    
+    // Log admin access
+    $adminSecurity->logAdminActivity($currentUser['id'], 'page_access', "Accessed: $uri");
+}
+
+// Route to requested file
 if (array_key_exists($uri, $routings)) {
     require $routings[$uri];
 } else {
-    // 404 for unknown routes
     http_response_code(404);
     echo "Page not found";
 }

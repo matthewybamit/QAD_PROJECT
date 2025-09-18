@@ -1,47 +1,188 @@
-
+<?php
+// views/profile.view.php
+?>
 <?php require_once 'partials/head.php'; ?>
 
 <body class="bg-gray-50">
     <?php require_once 'partials/nav.php'; ?>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div class="max-w-3xl mx-auto">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Flash Messages -->
+            <?php if ($message): ?>
+                <div class="mb-6 p-4 rounded-lg <?= $messageType === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' ?>">
+                    <?= htmlspecialchars($message) ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Profile Header -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="bg-blue-700 h-32"></div>
+            <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div class="bg-blue-900 h-32"></div>
                 <div class="px-6 py-6 -mt-16">
                     <div class="flex items-center">
-                        <div class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-medium border-4 border-white">
-                            <?php echo substr($_SESSION['user_name'], 0, 1); ?>
-                        </div>
+                        <?php if ($currentUser['avatar']): ?>
+                            <img class="w-24 h-24 rounded-full border-4 border-white object-cover" src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="Profile">
+                        <?php else: ?>
+                            <div class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-medium border-4 border-white">
+                                <?= substr($currentUser['name'], 0, 1) ?>
+                            </div>
+                        <?php endif; ?>
                         <div class="ml-6">
-                            <h1 class="text-2xl font-bold text-gray-900"><?php echo $_SESSION['user_name']; ?></h1>
-                            <p class="text-gray-600"><?php echo $_SESSION['user_email']; ?></p>
+                            <h1 class="text-2xl font-bold text-white"><?= htmlspecialchars($currentUser['name']) ?></h1>
+                            <p class="text-gray-600"><?= htmlspecialchars($currentUser['email']) ?></p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Profile Content -->
-            <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
-                    <div class="mt-6 grid grid-cols-1 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Name</label>
-                            <div class="mt-1 p-3 bg-gray-50 rounded-md"><?php echo $_SESSION['user_name']; ?></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <div class="mt-1 p-3 bg-gray-50 rounded-md"><?php echo $_SESSION['user_email']; ?></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Role</label>
-                            <div class="mt-1 p-3 bg-gray-50 rounded-md"><?php echo ucfirst($_SESSION['user_role'] ?? 'User'); ?></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Profile Information -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-lg font-medium text-gray-900 mb-6">Profile Information</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Name</label>
+                                <div class="mt-1 p-3 bg-gray-50 rounded-md"><?= htmlspecialchars($currentUser['name']) ?></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Email</label>
+                                <div class="mt-1 p-3 bg-gray-50 rounded-md"><?= htmlspecialchars($currentUser['email']) ?></div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Schools You Can Edit -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-lg font-medium text-gray-900 mb-6">Schools You Can Edit</h2>
+                        <?php if (empty($editableSchools)): ?>
+                            <div class="text-center py-4">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-500">You don't have edit permissions for any schools currently.</p>
+                                <p class="mt-1 text-xs text-gray-400">Request permission below to edit specific schools.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="space-y-3">
+                                <?php foreach ($editableSchools as $school): ?>
+                                    <div class="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <div class="flex-1">
+                                            <h3 class="font-medium text-gray-900"><?= htmlspecialchars($school['school_name']) ?></h3>
+                                            <p class="text-sm text-gray-600">
+                                                Expires: <?= date('M j, Y g:i A', strtotime($school['expires_at'])) ?>
+                                                <span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                    <?php 
+                                                    $remaining = strtotime($school['expires_at']) - time();
+                                                    echo $remaining > 3600 ? round($remaining/3600, 1) . 'h left' : round($remaining/60) . 'm left';
+                                                    ?>
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <a href="/school/<?= $school['id'] ?>" class="ml-4 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700">
+                                            Edit School
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
+
+            <!-- Request Permission Section -->
+            <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
+                <div class="p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Request School Edit Permission</h2>
+                    <p class="text-sm text-gray-600 mb-4">Request temporary edit access to a school profile. Permissions are granted for 24 hours and require admin approval.</p>
+                    
+                    <form method="POST" action="/request-permission" class="space-y-4">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Select School</label>
+                            <select name="school_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Choose a school...</option>
+                                <?php foreach ($allSchools as $school): ?>
+                                    <option value="<?= $school['id'] ?>"><?= htmlspecialchars($school['school_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Reason for Request</label>
+                            <textarea name="reason" rows="4" required minlength="10" maxlength="500" 
+                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                     placeholder="Please provide a detailed reason for needing edit access to this school profile (minimum 10 characters)..."></textarea>
+                            <p class="mt-1 text-xs text-gray-500">Be specific about what you need to update and why.</p>
+                        </div>
+                        
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            Submit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Permission History -->
+            <?php if (!empty($userPermissions)): ?>
+                <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-lg font-medium text-gray-900 mb-6">Recent Permission Requests</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">School</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <?php foreach ($userPermissions as $permission): ?>
+                                        <tr>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($permission['school_name']) ?></div>
+                                                <?php if ($permission['reason']): ?>
+                                                    <div class="text-sm text-gray-500 truncate max-w-xs"><?= htmlspecialchars(substr($permission['reason'], 0, 50)) ?>...</div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <?php
+                                                $statusColors = [
+                                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                                    'approved' => 'bg-green-100 text-green-800',
+                                                    'denied' => 'bg-red-100 text-red-800',
+                                                    'expired' => 'bg-gray-100 text-gray-800'
+                                                ];
+                                                ?>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColors[$permission['status']] ?>">
+                                                    <?= ucfirst($permission['status']) ?>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <?= date('M j, Y', strtotime($permission['requested_at'])) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <?= $permission['expires_at'] ? date('M j, g:i A', strtotime($permission['expires_at'])) : '-' ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
         </div>
     </div>
 </body>

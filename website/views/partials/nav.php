@@ -1,9 +1,7 @@
-<!-- Navbar -->
 <nav class="bg-blue-900 shadow-lg">
   <div class="max-w-9xl mx-auto px-10 sm:px-12 lg:px-16">
     <div class="flex justify-between items-center h-24">
       
-      <!-- Left: Logo + Agency -->
       <div class="flex items-center space-x-5">
         <img src="/assets/images/QAD_LOGO.png" alt="DepEd Logo" class="h-16 w-auto">
         <div>
@@ -12,9 +10,7 @@
         </div>
       </div>
 
-      <!-- Right: User Profile -->
       <div class="flex items-center space-x-4">
-        <!-- User Avatar and Dropdown -->
         <div class="relative inline-block text-left">
           <button id="userMenuButton" class="flex items-center space-x-3 focus:outline-none">
             <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center">
@@ -31,9 +27,9 @@
             </svg>
           </button>
 
-          <!-- Profile Dropdown -->
           <div id="userMenuDropdown" 
-               class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+            <?php if (isset($_SESSION['user_name'])): ?>
             <div class="px-4 py-2 border-b">
               <p class="text-sm text-gray-500">Signed in as</p>
               <p class="text-sm font-medium text-gray-900 truncate">
@@ -45,6 +41,12 @@
             <div class="border-t">
               <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign out</a>
             </div>
+            <?php else: ?>
+            <div class="px-4 py-2 border-b">
+              <p class="text-sm font-medium text-gray-900">You are a guest</p>
+            </div>
+            <a href="/login" class="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">Login</a>
+            <?php endif; ?>
           </div>
         </div>
       </div>
