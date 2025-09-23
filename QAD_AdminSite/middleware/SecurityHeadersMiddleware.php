@@ -1,5 +1,5 @@
 <?php
-// admin/middleware/SecurityHeadersMiddleware.php
+// middleware/SecurityHeadersMiddleware.php
 
 class SecurityHeadersMiddleware {
     public function handle($request, $next) {

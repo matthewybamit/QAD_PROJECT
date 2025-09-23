@@ -1,12 +1,13 @@
+<!-- views/partials/admin_head.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?= AdminSecurity::generateCSRFToken() ?>">
+<meta name="csrf-token" content="<?= $csrfToken ?? '' ?>">
     <title><?= $pageTitle ?? 'Admin Panel' ?> - School Directory Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/all.min.css">
     <style>
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
         .content-blur { backdrop-filter: blur(8px); }

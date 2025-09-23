@@ -1,70 +1,70 @@
 <?php
-// admin/middleware/AdminAuthMiddleware.php - Fixed version
+// middleware/AdminAuthMiddleware.php - Fixed version
 
-class AdminAuthMiddleware {
-    private $adminAuth;
+// class AdminAuthMiddleware {
+//     private $adminAuth;
     
-    public function __construct($adminAuth) {
-        $this->adminAuth = $adminAuth;
-    }
+//     public function __construct($adminAuth) {
+//         $this->adminAuth = $adminAuth;
+//     }
     
-    public function handle($request, $next) {
-        // Check maintenance mode first
-        if (AdminSecurity::isMaintenanceMode()) {
-            $secret = $_GET['secret'] ?? '';
-            if (!AdminSecurity::validateMaintenanceSecret($secret)) {
-                $this->showMaintenancePage();
-                exit;
-            }
-        }
+//     public function handle($request, $next) {
+//         // Check maintenance mode first
+//         if (AdminSecurity::isMaintenanceMode()) {
+//             $secret = $_GET['secret'] ?? '';
+//             if (!AdminSecurity::validateMaintenanceSecret($secret)) {
+//                 $this->showMaintenancePage();
+//                 exit;
+//             }
+//         }
         
-        // Check if user is authenticated
-        if (!$this->adminAuth->validateSession()) {
-            if ($this->isAjaxRequest()) {
-                http_response_code(401);
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Unauthorized', 'redirect' => '/admin/login']);
-                exit;
-            } else {
-                $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
-                header('Location: /admin/login');
-                exit;
-            }
-        }
+//         // Check if user is authenticated
+//         if (!$this->adminAuth->validateSession()) {
+//             if ($this->isAjaxRequest()) {
+//                 http_response_code(401);
+//                 header('Content-Type: application/json');
+//                 echo json_encode(['error' => 'Unauthorized', 'redirect' => '/admin/login']);
+//                 exit;
+//             } else {
+//                 $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
+//                 header('Location: /admin/login');
+//                 exit;
+//             }
+//         }
         
-        // Check IP whitelist for admin access
-        if (AdminSecurity::getSecurityConfig('ip_whitelist_enabled') && !AdminSecurity::validateIP($_SERVER['REMOTE_ADDR'])) {
-            AdminSecurity::logSecurityEvent(
-                $_SESSION['admin_user_id'] ?? null,
-                'IP_BLOCKED',
-                'Access denied from unauthorized IP',
-                $_SERVER['REMOTE_ADDR'],
-                $_SERVER['HTTP_USER_AGENT'] ?? ''
-            );
+//         // Check IP whitelist for admin access
+//         if (AdminSecurity::getSecurityConfig('ip_whitelist_enabled') && !AdminSecurity::validateIP($_SERVER['REMOTE_ADDR'])) {
+//             AdminSecurity::logSecurityEvent(
+//                 $_SESSION['admin_user_id'] ?? null,
+//                 'IP_BLOCKED',
+//                 'Access denied from unauthorized IP',
+//                 $_SERVER['REMOTE_ADDR'],
+//                 $_SERVER['HTTP_USER_AGENT'] ?? ''
+//             );
             
-            http_response_code(403);
-            if ($this->isAjaxRequest()) {
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Access denied from your IP address']);
-            } else {
-                echo '<h1>Access Denied</h1><p>Your IP address is not authorized to access this admin panel.</p>';
-            }
-            exit;
-        }
+//             http_response_code(403);
+//             if ($this->isAjaxRequest()) {
+//                 header('Content-Type: application/json');
+//                 echo json_encode(['error' => 'Access denied from your IP address']);
+//             } else {
+//                 echo '<h1>Access Denied</h1><p>Your IP address is not authorized to access this admin panel.</p>';
+//             }
+//             exit;
+//         }
         
-        return $next($request);
-    }
+//         return $next($request);
+//     }
     
-    private function isAjaxRequest() {
-        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
-    }
+//     private function isAjaxRequest() {
+//         return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+//                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+//     }
     
-    private function showMaintenancePage() {
-        http_response_code(503);
-        header('Retry-After: 3600');
-        ?>
-        <!DOCTYPE html>
+//     private function showMaintenancePage() {
+//         http_response_code(503);
+//         header('Retry-After: 3600');
+//         ?>
+        <!-- <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -96,7 +96,86 @@ class AdminAuthMiddleware {
                 </div>
             </div>
         </body>
-        </html>
+        </html> -->
         <?php
+//     }
+// }
+
+
+
+
+// middleware/AdminAuthMiddleware.php
+// Cleaned up: maintenance mode removed. Keeps auth + optional IP whitelist.
+
+class AdminAuthMiddleware {
+    private $adminAuth;
+
+    public function __construct($adminAuth) {
+        $this->adminAuth = $adminAuth;
+    }
+
+    public function handle($request, $next) {
+        // --------------------------
+        // Authentication
+        // --------------------------
+        if (!$this->adminAuth->validateSession()) {
+            if ($this->isAjaxRequest()) {
+                http_response_code(401);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Unauthorized', 'redirect' => '/admin/login']);
+                exit;
+            } else {
+                // Save intended URL and redirect to login page
+                if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+                $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'] ?? '/';
+                header('Location: /admin/login');
+                exit;
+            }
+        }
+
+        // --------------------------
+        // Optional: IP whitelist enforcement
+        // --------------------------
+        // Only enforce if AdminSecurity exists and ip_whitelist_enabled is true
+        if (class_exists('AdminSecurity')) {
+            $whitelistEnabled = (int) AdminSecurity::getSecurityConfig('ip_whitelist_enabled', 0);
+            if ($whitelistEnabled) {
+                $remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+                // Ensure validateIP exists
+                if (method_exists('AdminSecurity', 'validateIP')) {
+                    $allowed = AdminSecurity::validateIP($remoteIp);
+                } else {
+                    // If validateIP not implemented, default to deny (safer)
+                    $allowed = false;
+                }
+
+                if (!$allowed) {
+                    AdminSecurity::logSecurityEvent(
+                        $_SESSION['admin_user_id'] ?? null,
+                        'IP_BLOCKED',
+                        'Access denied from unauthorized IP',
+                        $remoteIp,
+                        $_SERVER['HTTP_USER_AGENT'] ?? ''
+                    );
+
+                    http_response_code(403);
+                    if ($this->isAjaxRequest()) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['error' => 'Access denied from your IP address']);
+                    } else {
+                        echo '<h1>Access Denied</h1><p>Your IP address is not authorized to access this admin panel.</p>';
+                    }
+                    exit;
+                }
+            }
+        }
+
+        // Continue to next middleware/controller
+        return $next($request);
+    }
+
+    private function isAjaxRequest() {
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 }

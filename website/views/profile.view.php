@@ -28,13 +28,34 @@
                                 <?= substr($currentUser['name'], 0, 1) ?>
                             </div>
                         <?php endif; ?>
-                        <div class="ml-6">
+                        <div class="ml-6 mb-6">
                             <h1 class="text-2xl font-bold text-white"><?= htmlspecialchars($currentUser['name']) ?></h1>
                             <p class="text-gray-600"><?= htmlspecialchars($currentUser['email']) ?></p>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <?php
+            // --- Compute active requests (so this view doesn't rely on controller to set it) ---
+            $activeRequestsCount = 0;
+            if (!empty($userPermissions) && is_array($userPermissions)) {
+                foreach ($userPermissions as $p) {
+                    // Count pending requests
+                    if (isset($p['status']) && $p['status'] === 'pending') {
+                        $activeRequestsCount++;
+                        continue;
+                    }
+                    // Count approved requests that are still valid (not expired)
+                    if (isset($p['status']) && $p['status'] === 'approved') {
+                        if (!empty($p['expires_at']) && strtotime($p['expires_at']) > time()) {
+                            $activeRequestsCount++;
+                        }
+                    }
+                }
+            }
+            $requestLimitReached = ($activeRequestsCount >= 3);
+            ?>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
@@ -78,7 +99,7 @@
                                                 <span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                                                     <?php 
                                                     $remaining = strtotime($school['expires_at']) - time();
-                                                    echo $remaining > 3600 ? round($remaining/3600, 1) . 'h left' : round($remaining/60) . 'm left';
+                                                    echo $remaining > 3600 ? round($remaining/3600, 1) . 'h left' : round(max($remaining,0)/60) . 'm left';
                                                     ?>
                                                 </span>
                                             </p>
@@ -98,36 +119,41 @@
             <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
                 <div class="p-6">
                     <h2 class="text-lg font-medium text-gray-900 mb-4">Request School Edit Permission</h2>
-                    <p class="text-sm text-gray-600 mb-4">Request temporary edit access to a school profile. Permissions are granted for 24 hours and require admin approval.</p>
-                    
-                    <form method="POST" action="/request-permission" class="space-y-4">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+
+                    <?php if ($requestLimitReached): ?>
+                        <p class="text-sm text-red-600 font-medium">You have reached the maximum of 3 active requests. Cancel a pending request to free a slot.</p>
+                    <?php else: ?>
+                        <p class="text-sm text-gray-600 mb-4">Request temporary edit access to a school profile. Permissions are granted for 24 hours and require admin approval.</p>
                         
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Select School</label>
-                            <select name="school_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">Choose a school...</option>
-                                <?php foreach ($allSchools as $school): ?>
-                                    <option value="<?= $school['id'] ?>"><?= htmlspecialchars($school['school_name']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Reason for Request</label>
-                            <textarea name="reason" rows="4" required minlength="10" maxlength="500" 
-                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
-                                     placeholder="Please provide a detailed reason for needing edit access to this school profile (minimum 10 characters)..."></textarea>
-                            <p class="mt-1 text-xs text-gray-500">Be specific about what you need to update and why.</p>
-                        </div>
-                        
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                            </svg>
-                            Submit Request
-                        </button>
-                    </form>
+                        <form method="POST" action="/request-permission" class="space-y-4">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Select School</label>
+                                <select name="school_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Choose a school...</option>
+                                    <?php foreach ($allSchools as $school): ?>
+                                        <option value="<?= $school['id'] ?>"><?= htmlspecialchars($school['school_name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Reason for Request</label>
+                                <textarea name="reason" rows="4" required minlength="10" maxlength="500" 
+                                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                         placeholder="Please provide a detailed reason for needing edit access to this school profile (minimum 10 characters)..."></textarea>
+                                <p class="mt-1 text-xs text-gray-500">Be specific about what you need to update and why.</p>
+                            </div>
+                            
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Submit Request
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -144,6 +170,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+                                        <th class="px-6 py-3"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -151,8 +178,8 @@
                                         <tr>
                                             <td class="px-6 py-4">
                                                 <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($permission['school_name']) ?></div>
-                                                <?php if ($permission['reason']): ?>
-                                                    <div class="text-sm text-gray-500 truncate max-w-xs"><?= htmlspecialchars(substr($permission['reason'], 0, 50)) ?>...</div>
+                                                <?php if (!empty($permission['reason'])): ?>
+                                                    <div class="text-sm text-gray-500 truncate max-w-xs"><?= htmlspecialchars(substr($permission['reason'], 0, 80)) ?><?= strlen($permission['reason']) > 80 ? '...' : '' ?></div>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -161,18 +188,32 @@
                                                     'pending' => 'bg-yellow-100 text-yellow-800',
                                                     'approved' => 'bg-green-100 text-green-800',
                                                     'denied' => 'bg-red-100 text-red-800',
-                                                    'expired' => 'bg-gray-100 text-gray-800'
+                                                    'expired' => 'bg-gray-100 text-gray-800',
+                                                    'cancelled' => 'bg-gray-50 text-gray-700'
                                                 ];
+                                                $status = $permission['status'] ?? 'pending';
+                                                $badgeClass = $statusColors[$status] ?? 'bg-gray-100 text-gray-800';
                                                 ?>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusColors[$permission['status']] ?>">
-                                                    <?= ucfirst($permission['status']) ?>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $badgeClass ?>">
+                                                    <?= ucfirst($status) ?>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <?= date('M j, Y', strtotime($permission['requested_at'])) ?>
+                                                <?= date('M j, Y g:i A', strtotime($permission['requested_at'])) ?>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <?= $permission['expires_at'] ? date('M j, g:i A', strtotime($permission['expires_at'])) : '-' ?>
+                                                <?= !empty($permission['expires_at']) ? date('M j, g:i A', strtotime($permission['expires_at'])) : '-' ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <?php if (in_array($permission['status'] ?? '', ['pending', 'expired'])): ?>
+                                                <form method="POST" action="" onsubmit="return confirm('Cancel this request?');" class="inline">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                    <input type="hidden" name="cancel_request_id" value="<?= (int)$permission['id'] ?>">
+                                                    <button type="submit" name="cancel_request" class="text-red-600 hover:text-red-800">Cancel</button>
+                                                </form>
+                                            <?php else: ?>
+                                                &nbsp;
+                                            <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

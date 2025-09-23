@@ -18,7 +18,7 @@ if (!$schoolId) {
     exit;
 }
 
-// ✅ Check if user has valid edit permission for this school
+// ✅ Permission check
 $stmt = $db->connection->prepare("
     SELECT * FROM school_edit_permissions
     WHERE user_id = ? 
@@ -51,23 +51,87 @@ if (!$school) {
 
 // ✅ Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $schoolName = $_POST['school_name'];
-    $address = $_POST['address'];
+    $schoolName   = $_POST['school_name'] ?? '';
+    $address      = $_POST['address'] ?? '';
+    $mission      = $_POST['mission_statement'] ?? '';
+    $vision       = $_POST['vision_statement'] ?? '';
+    $division     = $_POST['division_office'] ?? '';
+    $foundingYear = $_POST['founding_year'] ?? null;
+    $program      = $_POST['program_offering'] ?? '';
+    $population   = $_POST['student_population'] ?? null;
+    $description  = $_POST['school_description'] ?? '';
+    $website      = $_POST['website_url'] ?? '';
+    $facebook     = $_POST['facebook_url'] ?? '';
+    $permitNo     = $_POST['permit_no'] ?? '';
+    $accreditation= $_POST['accreditation'] ?? '';
+    $history      = $_POST['school_history'] ?? '';
+    $facultyCount = $_POST['faculty_count'] ?? null;
+    $recognition  = $_POST['recognition'] ?? '';
+    $facilities   = $_POST['facilities'] ?? '';
+    $achievements = $_POST['achievements'] ?? '';
+    $contactPerson= $_POST['contact_person'] ?? '';
+    $contactPhone = $_POST['contact_phone'] ?? '';
+    $contactEmail = $_POST['contact_email'] ?? '';
 
-    // Update school record
+    $newLogo = $school['school_logo'];
+
+    // ✅ Handle logo upload
+    if (isset($_FILES['school_logo']) && $_FILES['school_logo']['error'] === UPLOAD_ERR_OK) {
+        $fileTmp  = $_FILES['school_logo']['tmp_name'];
+        $fileName = uniqid("logo_") . "_" . basename($_FILES['school_logo']['name']);
+        $filePath = __DIR__ . '/../assets/logos/' . $fileName;
+
+        // Validate file type (basic check)
+        $allowed = ['image/jpeg', 'image/png', 'image/gif'];
+        if (in_array(mime_content_type($fileTmp), $allowed)) {
+            if (move_uploaded_file($fileTmp, $filePath)) {
+                $newLogo = $fileName;
+                // Optionally delete old logo file
+                if (!empty($school['school_logo']) && file_exists(__DIR__ . '/../assets/logos/' . $school['school_logo'])) {
+                    unlink(__DIR__ . '/../assets/logos/' . $school['school_logo']);
+                }
+            }
+        } else {
+            $_SESSION['flash_message'] = "Invalid logo file type.";
+            $_SESSION['flash_type'] = "error";
+            header("Location: /profilingEdit.php?id=" . $schoolId);
+            exit;
+        }
+    }
+
+    // ✅ Handle logo removal
+    if (!empty($_POST['remove_logo'])) {
+        if (!empty($school['school_logo']) && file_exists(__DIR__ . '/../assets/logos/' . $school['school_logo'])) {
+            unlink(__DIR__ . '/../assets/logos/' . $school['school_logo']);
+        }
+        $newLogo = null;
+    }
+
+    // ✅ Update school record
     $stmt = $db->connection->prepare("
-        UPDATE schools SET school_name = ?, address = ?, updated_at = NOW()
+        UPDATE schools 
+        SET school_name = ?, address = ?, mission_statement = ?, vision_statement = ?, 
+            division_office = ?, founding_year = ?, program_offering = ?, student_population = ?, 
+            school_description = ?, website_url = ?, facebook_url = ?, permit_no = ?, 
+            accreditation = ?, school_history = ?, faculty_count = ?, recognition = ?, 
+            facilities = ?, achievements = ?, contact_person = ?, contact_phone = ?, 
+            contact_email = ?, school_logo = ?, updated_at = NOW()
         WHERE id = ?
     ");
-    $stmt->execute([$schoolName, $address, $schoolId]);
+    $stmt->execute([
+        $schoolName, $address, $mission, $vision,
+        $division, $foundingYear, $program, $population,
+        $description, $website, $facebook, $permitNo,
+        $accreditation, $history, $facultyCount, $recognition,
+        $facilities, $achievements, $contactPerson, $contactPhone,
+        $contactEmail, $newLogo, $schoolId
+    ]);
 
-    // ❌ Remove the permission after first edit
-    $stmt = $db->connection->prepare("
-        DELETE FROM school_edit_permissions WHERE id = ?
-    ");
+    // ✅ Consume permission after saving
+    $stmt = $db->connection->prepare("DELETE FROM school_edit_permissions WHERE id = ?");
     $stmt->execute([$permission['id']]);
 
-    $_SESSION['flash_message'] = "School updated successfully. Your edit permission has been consumed.";
+    $_SESSION['flash_message'] = "School updated successfully (logo and details saved). Permission consumed.";
     $_SESSION['flash_type'] = "success";
     header("Location: /profile");
     exit;

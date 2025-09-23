@@ -1,5 +1,5 @@
 <?php
-// admin/models/SecurityLog.php
+// models/SecurityLog.php
 
 class SecurityLog {
     private $db;

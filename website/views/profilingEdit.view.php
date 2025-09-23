@@ -67,11 +67,11 @@
                             </div>
                         </div>
                         <!-- Back button responsive positioning -->
-                        <a href="/listing" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white shadow-sm hover:bg-gray-50 transition">
+                        <a href="/profile" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white shadow-sm hover:bg-gray-50 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
-                            Back to Listing
+                            Back to Profile
                         </a>
                     </div>
                 </div>  
@@ -291,10 +291,10 @@
                                 class="px-4 md:px-6 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50">
                             Cancel
                         </button>
-                        <button type="submit" 
-                                class="px-4 md:px-6 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">
-                            Save Changes
-                        </button>
+                    <button type="submit" id="save-button"
+                            class="px-4 md:px-6 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">
+                        Save Changes
+                    </button>
                     </div>
                 </form>
             <?php endif; ?>
@@ -305,6 +305,19 @@
     <script src="/public/js/hoveringInputs.js"></script>
     <!-- Logo Preview Script -->
     <script src="/public/js/logoPreview.js"></script>   
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const saveButton = document.getElementById('save-button');
+    const form = saveButton.closest('form');
+
+    saveButton.addEventListener('click', function (event) {
+        event.preventDefault(); // Stop immediate submission
+        if (confirm("Are you sure you want to save your changes? This action cannot be undone.")) {
+            form.submit(); // Proceed with saving
+        }
+    });
+});
+</script>
 
     <!-- Add Mobile Menu JavaScript -->
     <script>

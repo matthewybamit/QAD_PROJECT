@@ -17,6 +17,30 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// --- Handle cancel request before fetching data ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_request'])) {
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $_SESSION['flash_message'] = "Invalid CSRF token.";
+        $_SESSION['flash_type'] = "error";
+        header('Location: /profile');
+        exit;
+    }
+
+   $requestId = (int)$_POST['cancel_request_id'];
+
+    try {
+        $editPermissions->cancelRequest($requestId, $currentUser['id']);
+        $_SESSION['flash_message'] = "Request successfully cancelled.";
+        $_SESSION['flash_type'] = "success";
+    } catch (Exception $e) {
+        $_SESSION['flash_message'] = $e->getMessage();
+        $_SESSION['flash_type'] = "error";
+    }
+
+    header('Location: /profile');
+    exit;
+}
+
 // Flash messages
 $message = $_SESSION['flash_message'] ?? null;
 $messageType = $_SESSION['flash_type'] ?? null;
@@ -31,7 +55,7 @@ try {
     
     // Get schools user can currently edit (only unused + not expired)
     $stmt = $db->connection->prepare("
-        SELECT s.*, sep.expires_at 
+        SELECT s.*, sep.id as permission_id, sep.expires_at 
         FROM schools s
         JOIN school_edit_permissions sep ON s.id = sep.school_id
         WHERE sep.user_id = ? 

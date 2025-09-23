@@ -1,4 +1,4 @@
-<!-- admin/views/login.php -->
+<!-- views/login.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>

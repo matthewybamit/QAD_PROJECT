@@ -133,7 +133,7 @@ require_once 'partials/admin_head.php';
                                             <div class="flex items-center space-x-2">
                                                 <?php if ($permission['status'] === 'pending'): ?>
                                                     <form method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                         <input type="hidden" name="action" value="approve">
                                                         <input type="hidden" name="permission_id" value="<?= $permission['id'] ?>">
                                                         <button type="submit" class="text-green-600 hover:text-green-800 text-sm" title="Approve">
@@ -141,7 +141,7 @@ require_once 'partials/admin_head.php';
                                                         </button>
                                                     </form>
                                                     <form method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                                                       <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                         <input type="hidden" name="action" value="deny">
                                                         <input type="hidden" name="permission_id" value="<?= $permission['id'] ?>">
                                                         <button type="submit" class="text-red-600 hover:text-red-800 text-sm" title="Deny">
@@ -154,7 +154,7 @@ require_once 'partials/admin_head.php';
                                                         <i class="fas fa-clock"></i>
                                                     </button>
                                                     <form method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                                                       <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                         <input type="hidden" name="action" value="revoke">
                                                         <input type="hidden" name="permission_id" value="<?= $permission['id'] ?>">
                                                         <button type="submit" class="text-red-600 hover:text-red-800 text-sm" title="Revoke">
@@ -185,7 +185,7 @@ require_once 'partials/admin_head.php';
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Extend Permission</h3>
                     <form id="extendForm" method="POST">
-                        <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                      <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                         <input type="hidden" name="action" value="extend">
                         <input type="hidden" name="permission_id" id="extendPermissionId">
                         
@@ -231,6 +231,6 @@ require_once 'partials/admin_head.php';
         </div>
     </div>
     
-    <script src="/admin/assets/js/permissions.js"></script>
+    <script src="/assets/js/permissions.js"></script>
 </body>
 </html>

@@ -1,18 +1,23 @@
 <?php 
 
-
-// Create and run dashboard
-$dashboard = new AdminDashboard($db, $adminAuth);
-$dashboard->index();
-
-// admin/controllers/PermissionManager.php
+// controllers/Permission.php
 class PermissionManager {
     private $db;
     private $adminAuth;
+    private $csrfToken; // store the token for reuse
     
     public function __construct($database, $adminAuth) {
         $this->db = $database;
         $this->adminAuth = $adminAuth;
+
+        // Generate CSRF token once per request, reuse across forms
+        if (!isset($_SESSION['csrf_token']) || 
+            !isset($_SESSION['csrf_token_time']) || 
+            (time() - $_SESSION['csrf_token_time']) > AdminSecurity::CSRF_TOKEN_EXPIRY) {
+            AdminSecurity::generateCSRFToken();
+        }
+
+        $this->csrfToken = $_SESSION['csrf_token'];
     }
     
     public function index() {
@@ -27,37 +32,49 @@ class PermissionManager {
         $status = $_GET['status'] ?? 'all';
         $search = $_GET['search'] ?? '';
         $permissions = $this->getPermissionRequests($status, $search);
+
+        // make csrfToken available to the view
+        $csrfToken = $this->csrfToken;
         
-        require_once 'views/permissions.php';
+        require_once 'views/permissions.view.php';
     }
     
-    private function handlePermissionAction() {
-        $action = $_POST['action'] ?? '';
-        $permissionId = (int)($_POST['permission_id'] ?? 0);
-        $currentUser = $this->adminAuth->getCurrentUser();
-        
-        if (!AdminSecurity::validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            $_SESSION['error'] = 'Invalid security token';
-            return;
-        }
-        
-        switch ($action) {
-            case 'approve':
-                $this->approvePermission($permissionId, $currentUser['id']);
-                break;
-            case 'deny':
-                $this->denyPermission($permissionId, $currentUser['id']);
-                break;
-            case 'extend':
-                $hours = (int)($_POST['extend_hours'] ?? 24);
-                $this->extendPermission($permissionId, $hours, $currentUser['id']);
-                break;
-            case 'revoke':
-                $this->revokePermission($permissionId, $currentUser['id']);
-                break;
-        }
+  private function handlePermissionAction() {
+    $action = $_POST['action'] ?? '';
+    $permissionId = (int)($_POST['permission_id'] ?? 0);
+    $currentUser = $this->adminAuth->getCurrentUser();
+
+    if (!AdminSecurity::validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $_SESSION['error'] = 'Invalid security token';
+        $this->redirectAfterPost();
+        return;
     }
-    
+
+    switch ($action) {
+        case 'approve':
+            $this->approvePermission($permissionId, $currentUser['id']);
+            break;
+        case 'deny':
+            $this->denyPermission($permissionId, $currentUser['id']);
+            break;
+        case 'extend':
+            $hours = (int)($_POST['extend_hours'] ?? 24);
+            $this->extendPermission($permissionId, $hours, $currentUser['id']);
+            break;
+        case 'revoke':
+            $this->revokePermission($permissionId, $currentUser['id']);
+            break;
+    }
+
+    // Always redirect after POST to avoid resubmission
+    $this->redirectAfterPost();
+}
+
+private function redirectAfterPost() {
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit();
+}
+
     private function approvePermission($permissionId, $adminId) {
         try {
             $this->db->beginTransaction();
@@ -292,3 +309,7 @@ class PermissionManager {
         }
     }
 }
+
+// Create and run permission manager
+$permissionManager = new PermissionManager($db, $adminAuth);
+$permissionManager->index();

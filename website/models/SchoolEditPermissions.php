@@ -41,7 +41,37 @@ class SchoolEditPermissions {
             return ['success' => false, 'message' => 'Database error occurred.'];
         }
     }
-    
+  public function cancelRequest($requestId, $userId) {
+    // Fetch request details
+    $stmt = $this->pdo->prepare("
+        SELECT id, status FROM school_edit_permissions
+        WHERE id = ? AND user_id = ?
+    ");
+    $stmt->execute([$requestId, $userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        throw new Exception("Request not found.");
+    }
+
+    // Allow cancellation if pending or expired
+    if (!in_array($row['status'], ['pending', 'expired'])) {
+        throw new Exception("Only pending or expired requests can be cancelled.");
+    }
+
+    // ✅ Delete request entirely
+    $deleteStmt = $this->pdo->prepare("DELETE FROM school_edit_permissions WHERE id = ?");
+    $deleteStmt->execute([$requestId]);
+
+    // Log it
+    $this->logActivity($userId, 'permission_cancelled', "Cancelled request ID: $requestId");
+
+    return true;
+}
+
+
+    // Keep your other methods (getUserPermissions, etc.)
+
     /**
      * Approve permission (admin only) - 24 hour access
      */
