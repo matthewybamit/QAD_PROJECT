@@ -33,7 +33,7 @@ require_once 'partials/admin_head.php';
                 <i class="fa-solid fa-shield-halved mr-2 text-blue-600"></i> IP Whitelist
             </h2>
             <form method="POST" class="flex space-x-2 mb-4">
-                <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="action" value="add_ip">
                 <input type="text" name="ip_address" placeholder="IP Address" class="border rounded px-3 py-2 flex-1" required>
                 <input type="text" name="description" placeholder="Description" class="border rounded px-3 py-2 flex-1">
@@ -60,7 +60,7 @@ require_once 'partials/admin_head.php';
                             <td class="px-4 py-2"><?= htmlspecialchars($ip['created_at']) ?></td>
                             <td class="px-4 py-2 text-right">
                                 <form method="POST" onsubmit="return confirm('Remove this IP?')">
-                                    <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="action" value="remove_ip">
                                     <input type="hidden" name="ip_id" value="<?= $ip['id'] ?>">
                                     <button type="submit" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
@@ -100,7 +100,7 @@ require_once 'partials/admin_head.php';
                             <td class="px-4 py-2"><?= htmlspecialchars($s['expires_at']) ?></td>
                             <td class="px-4 py-2 text-right">
                                 <form method="POST" onsubmit="return confirm('Terminate this session?')">
-                                    <input type="hidden" name="csrf_token" value="<?= AdminSecurity::generateCSRFToken() ?>">
+                              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="action" value="terminate_session">
                                     <input type="hidden" name="session_id" value="<?= $s['id'] ?>">
                                     <button type="submit" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-ban"></i></button>

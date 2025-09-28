@@ -1,6 +1,6 @@
 
 <?php
-// admin/config/admin_config.php - Admin-specific configuration
+// config/admin_config.php - Admin-specific configuration
 require_once '../../config/env.php';
 
 class AdminConfig {

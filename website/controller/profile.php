@@ -1,6 +1,6 @@
 <?php 
 // controller/profile.php - Enhanced with one-time permission system
-require_once 'config/db.php';
+
 require_once 'models/GoogleAuth.php';
 require_once 'models/SchoolEditPermissions.php';
 

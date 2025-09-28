@@ -1,7 +1,7 @@
-<section class="py-24 bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden pt-20">
+<section class="py-24 bg-gradient-to-br from-white to-blue-50 relative overflow-hidden pt-20"> 
     <!-- Decorative Elements -->
-    <div class="absolute top-0 left-0 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-    <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+    <div class="absolute bottom-10left-0 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+    <div class="absolute bottom-7 right-0 w-64 h-64 bg-yellow-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
     <div class="absolute -bottom-8 left-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
 
     <!-- Section Header with enhanced styling -->

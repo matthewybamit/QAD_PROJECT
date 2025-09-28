@@ -2,13 +2,22 @@
   <div class="max-w-9xl mx-auto px-10 sm:px-12 lg:px-16">
     <div class="flex justify-between items-center h-24">
       
-      <div class="flex items-center space-x-5">
-        <img src="/assets/images/QAD_LOGO.png" alt="DepEd Logo" class="h-16 w-auto">
-        <div>
-          <span class="block text-2xl font-bold text-white tracking-wide">Department of Education</span>
-          <span class="block text-base text-yellow-400">Republic of the Philippines</span>
-        </div>
-      </div>
+<div class="flex items-center space-x-3 sm:space-x-5">
+  <!-- Logo: smaller on mobile, normal on desktop -->
+  <img src="/assets/images/QAD_LOGO.png" alt="DepEd Logo" 
+       class="h-10 w-auto sm:h-16">
+
+  <div class="leading-tight">
+    <!-- Title: smaller on mobile, original size on desktop -->
+    <span class="block text-lg sm:text-2xl font-bold text-white tracking-wide">
+      Department of Education
+    </span>
+    <span class="block text-sm sm:text-base text-yellow-400">
+      Republic of the Philippines
+    </span>
+  </div>
+</div>
+
 
       <div class="flex items-center space-x-4">
         <div class="relative inline-block text-left">

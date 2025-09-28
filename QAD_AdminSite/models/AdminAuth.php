@@ -87,18 +87,19 @@ class AdminAuth {
     }
 
     private function createAdminSession($admin) {
-        session_regenerate_id(true);
+    // CRITICAL: Regenerate session ID to prevent session fixation
+    session_regenerate_id(true);
 
-        $_SESSION['admin_user_id'] = $admin['id'];
-        $_SESSION['admin_user_email'] = $admin['email'] ?? '';
-        $_SESSION['admin_user_name'] = $admin['name'] ?? '';
-        $_SESSION['admin_login_time'] = time();
-        $_SESSION['admin_last_activity'] = time();
-        $_SESSION['admin_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
-        $_SESSION['admin_user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $_SESSION['admin_user_id'] = $admin['id'];
+    $_SESSION['admin_user_email'] = $admin['email'] ?? '';
+    $_SESSION['admin_user_name'] = $admin['name'] ?? '';
+    $_SESSION['admin_login_time'] = time();
+    $_SESSION['admin_last_activity'] = time();
+    $_SESSION['admin_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+    $_SESSION['admin_user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-        $this->storeAdminSession(session_id(), $admin['id']);
-    }
+    $this->storeAdminSession(session_id(), $admin['id']);
+}
 
     private function storeAdminSession($sessionId, $userId) {
         try {
@@ -125,44 +126,55 @@ class AdminAuth {
         }
     }
 
-    public function validateSession() {
-        if (!isset($_SESSION['admin_user_id'])) return false;
+  public function validateSession() {
+    if (!isset($_SESSION['admin_user_id'])) return false;
 
-        $sessionTimeout = (class_exists('AdminSecurity') ? AdminSecurity::getSecurityConfig('session_timeout', 3600) : 3600);
+    $sessionTimeout = (class_exists('AdminSecurity') ? AdminSecurity::getSecurityConfig('session_timeout', 3600) : 3600);
 
-        if (time() - ($_SESSION['admin_last_activity'] ?? 0) > $sessionTimeout) {
-            $this->logout();
-            return false;
-        }
-
-        try {
-            if ($this->db) {
-                $stmt = $this->db->prepare("SELECT COUNT(*) FROM admin_sessions WHERE id = ? AND user_id = ? AND expires_at > NOW()");
-                $stmt->execute([session_id(), $_SESSION['admin_user_id']]);
-                if ($stmt->fetchColumn() == 0) {
-                    $this->logout();
-                    return false;
-                }
-            }
-        } catch (PDOException $e) {
-            error_log("Session validation error: " . $e->getMessage());
-            return false;
-        }
-
-        if (($_SESSION['admin_ip'] ?? '') !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
-            if (class_exists('AdminSecurity')) {
-                AdminSecurity::logSecurityEvent($_SESSION['admin_user_id'] ?? null, 'SESSION_IP_MISMATCH', "Session IP mismatch", $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? '');
-            }
-            $this->logout();
-            return false;
-        }
-
-        $_SESSION['admin_last_activity'] = time();
-        $this->updateSessionActivity();
-
-        return true;
+    // Check session timeout
+    if (time() - ($_SESSION['admin_last_activity'] ?? 0) > $sessionTimeout) {
+        $this->logout();
+        return false;
     }
 
+    // Validate database session
+    try {
+        if ($this->db) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM admin_sessions WHERE id = ? AND user_id = ? AND expires_at > NOW()");
+            $stmt->execute([session_id(), $_SESSION['admin_user_id']]);
+            if ($stmt->fetchColumn() == 0) {
+                $this->logout();
+                return false;
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Session validation error: " . $e->getMessage());
+        return false;
+    }
+
+    // SECURITY: Check IP consistency (optional - can be disabled for mobile users)
+    if (($_SESSION['admin_ip'] ?? '') !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
+        if (class_exists('AdminSecurity')) {
+            AdminSecurity::logSecurityEvent($_SESSION['admin_user_id'] ?? null, 'SESSION_IP_MISMATCH', "Session IP mismatch - potential session hijacking", $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? '');
+        }
+        // Optional: Comment out these lines if you want to allow IP changes
+        $this->logout();
+        return false;
+    }
+
+    // SECURITY: Check User-Agent consistency (basic check)
+    if (isset($_SESSION['admin_user_agent']) && $_SESSION['admin_user_agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? '')) {
+        if (class_exists('AdminSecurity')) {
+            AdminSecurity::logSecurityEvent($_SESSION['admin_user_id'] ?? null, 'SESSION_UA_MISMATCH', "User-Agent mismatch - potential session hijacking", $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? '');
+        }
+        // This is less strict than IP check - just log it
+    }
+
+    $_SESSION['admin_last_activity'] = time();
+    $this->updateSessionActivity();
+
+    return true;
+}
     private function updateSessionActivity() {
         try {
             if (!$this->db) return;

@@ -1,5 +1,5 @@
 <?php
-// /config/admin_db.php
+// config/admin_db.php
 // Reworked: keeps AdminDatabase class but also instantiates it and exposes $db (PDO) and $pdo
 
 // --- Load env helper (try a few common locations) ---

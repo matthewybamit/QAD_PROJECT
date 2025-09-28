@@ -2,11 +2,21 @@
 // router.php - Updated: landing page instead of redirecting to login
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
 
-// Define public routes
-$publicRoutes = ['/login', '/auth/callback', '/logout'];
+// var_dump($uri);
+// Define public routes (always accessible without login)
+$publicRoutes = [
+    '/login',
+    '/auth/callback',
+    '/logout',
+    '/listing',   // always public
+    '/landing'    // always public
+];
 
-// Check authentication for protected routes (non-admin)
-if (!in_array($uri, $publicRoutes) && strpos($uri, '/admin/') !== 0) {
+// Allow school pages to be public
+$isSchoolRoute = preg_match('/^\/school\/(\d+)$/', $uri);
+
+// Check authentication for protected routes (non-admin, non-school)
+if (!in_array($uri, $publicRoutes) && !$isSchoolRoute && strpos($uri, '/admin/') !== 0) {
     require_once 'models/GoogleAuth.php';
     
     if (!GoogleAuth::isLoggedIn()) {
@@ -34,8 +44,9 @@ $routings = [
     '/404' => '404.php'
 ];
 
-// Handle school routes with permission checking
-if (preg_match('/^\/school\/(\d+)$/', $uri, $matches)) {
+// Handle school routes (public access)
+if ($isSchoolRoute) {
+    preg_match('/^\/school\/(\d+)$/', $uri, $matches);
     $_GET['id'] = $matches[1];
     $schoolId = $matches[1];
     
@@ -52,7 +63,11 @@ if (preg_match('/^\/school\/(\d+)$/', $uri, $matches)) {
             $adminSecurity = new AdminSecurity($db->connection);
             if ($adminSecurity->verifyAdminAccess($currentUser['id'])) {
                 $canEdit = true;
-                $adminSecurity->logAdminActivity($currentUser['id'], 'school_edit_access', "Accessed school ID: $schoolId");
+                $adminSecurity->logAdminActivity(
+                    $currentUser['id'],
+                    'school_edit_access',
+                    "Accessed school ID: $schoolId"
+                );
             }
         } else {
             $canEdit = $editPermissions->canUserEditSchool($currentUser['id'], $schoolId);
@@ -62,6 +77,7 @@ if (preg_match('/^\/school\/(\d+)$/', $uri, $matches)) {
     if ($canEdit) {
         require 'controller/profilingEdit.php';
     } else {
+        // Public-facing form
         require 'controller/profilingFormUser.php';
     }
     exit;

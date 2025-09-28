@@ -1,6 +1,6 @@
 <?php
 // controller/profilingEdit.php
-require_once 'config/db.php';
+
 require_once 'models/GoogleAuth.php';
 
 if (!GoogleAuth::isLoggedIn()) {

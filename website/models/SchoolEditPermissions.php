@@ -5,6 +5,8 @@ class SchoolEditPermissions {
     
     public function __construct($pdo) {
         $this->pdo = $pdo;
+        // Always cleanup expired rows on object creation
+        $this->cleanupExpiredPermissions();
     }
     
     /**
@@ -12,6 +14,9 @@ class SchoolEditPermissions {
      */
     public function requestEditPermission($userId, $schoolId, $reason) {
         try {
+            // Cleanup first
+            $this->cleanupExpiredPermissions();
+
             // Check if user already has an active request
             $stmt = $this->pdo->prepare("
                 SELECT * FROM school_edit_permissions 
@@ -41,42 +46,46 @@ class SchoolEditPermissions {
             return ['success' => false, 'message' => 'Database error occurred.'];
         }
     }
-  public function cancelRequest($requestId, $userId) {
-    // Fetch request details
-    $stmt = $this->pdo->prepare("
-        SELECT id, status FROM school_edit_permissions
-        WHERE id = ? AND user_id = ?
-    ");
-    $stmt->execute([$requestId, $userId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$row) {
-        throw new Exception("Request not found.");
+    /**
+     * Cancel request
+     */
+    public function cancelRequest($requestId, $userId) {
+        $this->cleanupExpiredPermissions();
+
+        $stmt = $this->pdo->prepare("
+            SELECT id, status FROM school_edit_permissions
+            WHERE id = ? AND user_id = ?
+        ");
+        $stmt->execute([$requestId, $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            throw new Exception("Request not found.");
+        }
+
+        // Allow cancellation if pending or expired
+        if (!in_array($row['status'], ['pending', 'expired'])) {
+            throw new Exception("Only pending or expired requests can be cancelled.");
+        }
+
+        // Delete request entirely
+        $deleteStmt = $this->pdo->prepare("DELETE FROM school_edit_permissions WHERE id = ?");
+        $deleteStmt->execute([$requestId]);
+
+        // Log it
+        $this->logActivity($userId, 'permission_cancelled', "Cancelled request ID: $requestId");
+
+        return true;
     }
-
-    // Allow cancellation if pending or expired
-    if (!in_array($row['status'], ['pending', 'expired'])) {
-        throw new Exception("Only pending or expired requests can be cancelled.");
-    }
-
-    // ✅ Delete request entirely
-    $deleteStmt = $this->pdo->prepare("DELETE FROM school_edit_permissions WHERE id = ?");
-    $deleteStmt->execute([$requestId]);
-
-    // Log it
-    $this->logActivity($userId, 'permission_cancelled', "Cancelled request ID: $requestId");
-
-    return true;
-}
-
-
-    // Keep your other methods (getUserPermissions, etc.)
 
     /**
      * Approve permission (admin only) - 24 hour access
      */
     public function approvePermission($permissionId, $adminId) {
         try {
+            $this->cleanupExpiredPermissions();
+
             $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
             
             $stmt = $this->pdo->prepare("
@@ -107,6 +116,8 @@ class SchoolEditPermissions {
      */
     public function denyPermission($permissionId, $adminId) {
         try {
+            $this->cleanupExpiredPermissions();
+
             $stmt = $this->pdo->prepare("
                 UPDATE school_edit_permissions 
                 SET status = 'denied', approved_by = ?
@@ -130,7 +141,6 @@ class SchoolEditPermissions {
      */
     public function canUserEditSchool($userId, $schoolId) {
         try {
-            // Clean expired permissions first
             $this->cleanupExpiredPermissions();
             
             $stmt = $this->pdo->prepare("
@@ -150,6 +160,8 @@ class SchoolEditPermissions {
      */
     public function getPendingRequests() {
         try {
+            $this->cleanupExpiredPermissions();
+
             $stmt = $this->pdo->prepare("
                 SELECT sep.*, u.name as user_name, u.email as user_email, s.school_name 
                 FROM school_edit_permissions sep
@@ -170,6 +182,8 @@ class SchoolEditPermissions {
      */
     public function getUserPermissions($userId) {
         try {
+            $this->cleanupExpiredPermissions();
+
             $stmt = $this->pdo->prepare("
                 SELECT sep.*, s.school_name
                 FROM school_edit_permissions sep

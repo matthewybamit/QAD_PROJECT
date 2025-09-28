@@ -1,4 +1,5 @@
 <?php
+//router.php
 // Load required files
 $requiredFiles = [
     'config/admin_db.php',
@@ -107,7 +108,7 @@ try {
             break;
             
         case '/logout':
-            handleLogout($adminAuth);
+            handleLogout($db, $adminAuth);
             break;
             
         case '/permissions':
@@ -208,12 +209,12 @@ function handleLogin($db, $adminAuth) {
     require_once 'views/login.view.php';
 }
 
-function handleLogout($adminAuth) {
-    $adminAuth->logout();
-    header('Location: /admin/login');
+function handleLogout($db, $adminAuth) {
+    require_once 'controller/Logout.php';
+    $adminLogout = new AdminLogout($db, $adminAuth);
+    $adminLogout->handle();
     exit;
 }
-
 function handlePermissions($db, $adminAuth) {
     require_once 'controller/Permission.php';
     $permissionManager = new PermissionManager($db, $adminAuth);
@@ -224,6 +225,11 @@ function handleSecurity($db, $adminAuth, $securityLog) {
     require_once 'controller/SecurityManager.php';
     $securityManager = new SecurityManager($db, $adminAuth);
     $securityManager->index();
+}
+function handleNotificationsAPI($db, $adminAuth) {
+    require_once 'controllers/NotificationsAPI.php';
+    // The controller will handle the API request
+    exit;
 }
 
 function handleUsers($db, $adminAuth) {

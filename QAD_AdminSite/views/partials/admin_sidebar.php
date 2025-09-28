@@ -1,6 +1,6 @@
 
 <!-- views/partials/admin_sidebar.php -->
-<div class="bg-gray-800 text-white w-64 min-h-screen sidebar-transition" id="sidebar">
+<div class="bg-gray-800 text-white w-64 min-h-screen sidebar-transition sticky" id="sidebar">
     <div class="p-4">
         <nav class="mt-8">
             <div class="space-y-2">

@@ -44,6 +44,216 @@ class AdminSecurity {
         }
     }
 
+
+/** ───── PASSWORD POLICY ───── */
+public static function validatePasswordStrength($password) {
+    $errors = [];
+    $minLength = self::getSecurityConfig('password_min_length', 12);
+    
+    if (strlen($password) < $minLength) {
+        $errors[] = "Password must be at least {$minLength} characters long";
+    }
+    
+    if (!preg_match('/[A-Z]/', $password)) {
+        $errors[] = 'Password must contain at least one uppercase letter';
+    }
+    
+    if (!preg_match('/[a-z]/', $password)) {
+        $errors[] = 'Password must contain at least one lowercase letter';
+    }
+    
+    if (!preg_match('/[0-9]/', $password)) {
+        $errors[] = 'Password must contain at least one number';
+    }
+    
+    if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+        $errors[] = 'Password must contain at least one special character';
+    }
+    
+    // Check against common passwords
+    $commonPasswords = [
+        'password', 'password123', '123456', 'admin', 'administrator',
+        'qwerty', 'letmein', 'welcome', 'monkey', 'dragon'
+    ];
+    
+    if (in_array(strtolower($password), $commonPasswords)) {
+        $errors[] = 'Password is too common and easily guessable';
+    }
+    
+    return empty($errors) ? true : $errors;
+}
+
+public static function checkPasswordHistory($userId, $newPasswordHash, $historyCount = 5) {
+    try {
+        $connection = self::getDatabase();
+        $stmt = $connection->prepare("
+            SELECT password_hash 
+            FROM admin_password_history 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ?
+        ");
+        $stmt->execute([$userId, $historyCount]);
+        $oldPasswords = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        foreach ($oldPasswords as $oldHash) {
+            if (password_verify($newPasswordHash, $oldHash)) {
+                return false; // Password was used recently
+            }
+        }
+        
+        return true;
+    } catch (Exception $e) {
+        error_log("Password history check error: " . $e->getMessage());
+        return true; // Allow if check fails
+    }
+}
+
+public static function addToPasswordHistory($userId, $passwordHash) {
+    try {
+        $connection = self::getDatabase();
+        
+        // Add new password to history
+        $stmt = $connection->prepare("
+            INSERT INTO admin_password_history (user_id, password_hash, created_at) 
+            VALUES (?, ?, NOW())
+        ");
+        $stmt->execute([$userId, $passwordHash]);
+        
+        // Keep only last 5 passwords
+        $stmt = $connection->prepare("
+            DELETE FROM admin_password_history 
+            WHERE user_id = ? 
+            AND id NOT IN (
+                SELECT id FROM (
+                    SELECT id FROM admin_password_history 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT 5
+                ) tmp
+            )
+        ");
+        $stmt->execute([$userId, $userId]);
+        
+    } catch (Exception $e) {
+        error_log("Password history storage error: " . $e->getMessage());
+    }
+}
+
+/** ───── ENHANCED INPUT VALIDATION ───── */
+public static function validateInput($input, $type = 'string', $maxLength = 255) {
+    if (is_array($input)) {
+        return array_map(function($item) use ($type, $maxLength) {
+            return self::validateInput($item, $type, $maxLength);
+        }, $input);
+    }
+    
+    // Basic sanitization
+    $input = trim($input);
+    
+    // Length check
+    if (strlen($input) > $maxLength) {
+        throw new InvalidArgumentException("Input exceeds maximum length of {$maxLength}");
+    }
+    
+    // Type-specific validation
+    switch ($type) {
+        case 'email':
+            if (!filter_var($input, FILTER_VALIDATE_EMAIL)) {
+                throw new InvalidArgumentException("Invalid email format");
+            }
+            break;
+            
+        case 'ip':
+            if (!filter_var($input, FILTER_VALIDATE_IP)) {
+                throw new InvalidArgumentException("Invalid IP address format");
+            }
+            break;
+            
+        case 'alphanumeric':
+            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $input)) {
+                throw new InvalidArgumentException("Input must contain only alphanumeric characters, underscores, and hyphens");
+            }
+            break;
+            
+        case 'numeric':
+            if (!is_numeric($input)) {
+                throw new InvalidArgumentException("Input must be numeric");
+            }
+            break;
+    }
+    
+    return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+}
+
+/** ───── BRUTE FORCE PROTECTION ───── */
+public static function checkBruteForceProtection($identifier, $action = 'login') {
+    $key = "bruteforce_{$action}_{$identifier}";
+    $attempts = self::getRateLimitAttempts($key);
+    
+    // Progressive delays
+    $delays = [0, 1, 2, 5, 10, 30, 60, 300, 600]; // seconds
+    $delayIndex = min(count($delays) - 1, $attempts);
+    $delay = $delays[$delayIndex];
+    
+    if ($delay > 0) {
+        sleep($delay);
+        self::logSecurityEvent(
+            null,
+            'BRUTE_FORCE_DELAY',
+            "Applied {$delay}s delay after {$attempts} failed {$action} attempts",
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            $_SERVER['HTTP_USER_AGENT'] ?? ''
+        );
+    }
+    
+    return true;
+}
+
+private static function getRateLimitAttempts($key) {
+    $cacheFile = sys_get_temp_dir() . "/admin_bf_" . md5($key);
+    
+    if (!file_exists($cacheFile)) {
+        return 0;
+    }
+    
+    $data = json_decode(file_get_contents($cacheFile), true);
+    if (!$data || !isset($data['attempts'], $data['last_attempt'])) {
+        return 0;
+    }
+    
+    // Reset if last attempt was more than 1 hour ago
+    if (time() - $data['last_attempt'] > 3600) {
+        unlink($cacheFile);
+        return 0;
+    }
+    
+    return $data['attempts'];
+}
+
+public static function recordFailedAttempt($identifier, $action = 'login') {
+    $key = "bruteforce_{$action}_{$identifier}";
+    $cacheFile = sys_get_temp_dir() . "/admin_bf_" . md5($key);
+    
+    $attempts = self::getRateLimitAttempts($key) + 1;
+    
+    $data = [
+        'attempts' => $attempts,
+        'last_attempt' => time()
+    ];
+    
+    file_put_contents($cacheFile, json_encode($data));
+}
+
+public static function clearFailedAttempts($identifier, $action = 'login') {
+    $key = "bruteforce_{$action}_{$identifier}";
+    $cacheFile = sys_get_temp_dir() . "/admin_bf_" . md5($key);
+    
+    if (file_exists($cacheFile)) {
+        unlink($cacheFile);
+    }
+}
+
     /** ───── LOGGING ───── */
     public static function logSecurityEvent($adminUserId, $action, $details, $ipAddress, $userAgent) {
         try {

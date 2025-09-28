@@ -6,7 +6,7 @@
        class="absolute inset-0 w-full h-full object-cover">
   
   <!-- Dark Overlay -->
-<div class="absolute inset-0 bg-gradient-to-b from-blue-500/80 via-blue-250/40 to-transparent"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-blue-500/80 via-blue-250/40 to-transparent"></div>
 
   <!-- Top Bar (Date & PH Time) -->
   <div class="absolute top-4 right-8 z-20 text-right">
@@ -17,33 +17,34 @@
   </div>
 
   <!-- Content -->
-  <div class="relative z-10 flex items-center justify-between h-full px-8 lg:px-20">
+  <div class="relative z-10 flex flex-col items-center justify-center text-center h-full px-6 sm:flex-row sm:justify-between sm:text-right sm:px-8 lg:px-20">
     
     <!-- Left: Logo -->
-    <div class="flex-shrink-0">
+    <div class="flex-shrink-0 mb-6 sm:mb-0">
       <img src="/assets/images/QAD_LOGO.png" 
            alt="DepEd Logo" 
-           class="w-40 h-auto lg:w-56">
+           class="w-32 sm:w-40 h-auto lg:w-56">
     </div>
 
     <!-- Right: Title + Strokes -->
-    <div class="text-right text-white max-w-lg relative">
-      <!-- Vertical Line -->
-      <div class="absolute top-0 right-0 h-full border-r-4 border-white"></div>
+    <div class="text-white max-w-lg relative">
+      <!-- Vertical Line (hidden on mobile) -->
+      <div class="hidden sm:block absolute top-0 right-0 h-full border-r-4 border-white"></div>
 
       <!-- Text -->
-      <h1 class="text-4xl lg:text-5xl font-extrabold leading-snug mr-5">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-snug sm:mr-5">
         QUALITY<br>
         ASSURANCE<br>
         DIVISION
       </h1>
 
       <!-- Horizontal Line -->
-      <div class="mt-4 border-t-4 border-white w-40 ml-auto"></div>
+      <div class="mt-3 sm:mt-4 border-t-4 border-white w-24 sm:w-40 mx-auto sm:ml-auto"></div>
     </div>
 
   </div>
 </section>
+
 
 <script src="/public/js/time.js"></script>
 
@@ -70,19 +71,19 @@
   <div id="coverflow" class="relative h-96 sm:h-[32rem] flex items-center justify-center perspective overflow-hidden touch-pan-x">
     <!-- Slides -->
     <div class="absolute w-56 sm:w-72 h-72 sm:h-96 transition-transform duration-700 ease-in-out" data-index="0">
-      <img src="/assets/image/slide1.jpg" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 1">
+      <img src="/assets/images/guidelines01.png" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 1">
     </div>
     <div class="absolute w-56 sm:w-72 h-72 sm:h-96 transition-transform duration-700 ease-in-out" data-index="1">
-      <img src="/assets/image/slide2.jpg" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 2">
+      <img src="/assets/images/02guidelines.png" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 2">
     </div>
     <div class="absolute w-56 sm:w-72 h-72 sm:h-96 transition-transform duration-700 ease-in-out" data-index="2">
-      <img src="/assets/image/slide3.jpg" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 3">
+      <img src="/assets/images/03guidelines.png" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 3">
     </div>
     <div class="absolute w-56 sm:w-72 h-72 sm:h-96 transition-transform duration-700 ease-in-out" data-index="3">
-      <img src="/assets/image/slide4.jpg" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 4">
+      <img src="/assets/images/04guidelines.png" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 4">
     </div>
     <div class="absolute w-56 sm:w-72 h-72 sm:h-96 transition-transform duration-700 ease-in-out" data-index="4">
-      <img src="/assets/image/slide5.jpg" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 5">
+      <img src="/assets/images/05guidelines.png" class="w-full h-full object-cover rounded-2xl shadow-2xl" alt="Slide 5">
     </div>
   </div>
 

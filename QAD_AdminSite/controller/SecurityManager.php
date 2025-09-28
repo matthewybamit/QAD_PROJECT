@@ -10,20 +10,33 @@ class SecurityManager {
         $this->adminAuth = $adminAuth;
     }
     
-    public function index() {
-        $currentUser = $this->adminAuth->getCurrentUser();
-        
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->handleSecurityAction();
-        }
-        
-        $securityLogs = $this->getSecurityLogs();
-        $suspiciousActivity = $this->getSuspiciousActivity();
-        $ipWhitelist = $this->getIPWhitelist();
-        $activeSessions = $this->getActiveSessions();
-        
-        require_once 'views/security.view.php';
+public function index() {
+    $currentUser = $this->adminAuth->getCurrentUser();
+
+    // Ensure session started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
     }
+
+    // Generate CSRF token ONCE
+    if (!isset($_SESSION['csrf_token']) || time() - ($_SESSION['csrf_token_time'] ?? 0) > AdminSecurity::CSRF_TOKEN_EXPIRY) {
+        $csrfToken = AdminSecurity::generateCSRFToken();
+    } else {
+        $csrfToken = $_SESSION['csrf_token'];
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $this->handleSecurityAction();
+    }
+
+    $securityLogs = $this->getSecurityLogs();
+    $suspiciousActivity = $this->getSuspiciousActivity();
+    $ipWhitelist = $this->getIPWhitelist();
+    $activeSessions = $this->getActiveSessions();
+
+    require 'views/security.view.php';
+}
+
     
     private function handleSecurityAction() {
         $action = $_POST['action'] ?? '';

@@ -1,14 +1,5 @@
-<!-- views/login.php -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?= $csrfToken ?>">
-    <title><?= $pageTitle ?? 'Admin Login' ?> - School Directory Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
+<!-- views/login.php - Add this to handle logout messages -->
+<?php require_once 'views/partials/admin_head.php'; ?>
 
 <body class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full mx-4">
@@ -16,11 +7,25 @@
             <!-- Header -->
             <div class="text-center mb-8">
                 <div class="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
-                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                    <img src="/assets/QAD_LOGO.png" alt="DepEd Logo" class="h-12 w-12">
                 </div>
-                <h1 class="text-3xl font-bold text-white mb-2">Admin Portal</h1>
+                <h1 class="text-3xl font-bold text-white mb-2">Quality Assurance Department Admin Portal</h1>
                 <p class="text-blue-200 text-sm">Secure access to school directory management</p>
             </div>
+
+            <!-- Logout Message -->
+            <?php if (isset($_SESSION['logout_message'])): ?>
+                <div class="mb-6 <?= $_SESSION['logout_message_type'] === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-100' : 'bg-blue-500/20 border-blue-500/50 text-blue-100' ?> border px-4 py-3 rounded-lg backdrop-blur">
+                    <div class="flex items-center">
+                        <i class="<?= $_SESSION['logout_message_type'] === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle' ?> mr-3"></i>
+                        <span><?= htmlspecialchars($_SESSION['logout_message']) ?></span>
+                    </div>
+                </div>
+                <?php 
+                unset($_SESSION['logout_message']);
+                unset($_SESSION['logout_message_type']);
+                ?>
+            <?php endif; ?>
 
             <!-- Error Message -->
             <?php if ($error): ?>

@@ -2,23 +2,23 @@
 <?php
 require_once 'models/SchoolQuery.php';
 
-$schoolQuery = new SchoolQuery($db);
-$result = $schoolQuery->getSchools([
-    'search' => $_GET['search'] ?? '',
-    'limit'  => (int)($_GET['limit'] ?? 10),
-    'page'   => (int)($_GET['page'] ?? 1),
-    'sort'   => $_GET['sort'] ?? 'school_name',
-    'order'  => $_GET['order'] ?? 'asc'
-]);
+// $schoolQuery = new SchoolQuery($db);
+// $result = $schoolQuery->getSchools([
+//     'search' => $_GET['search'] ?? '',
+//     'limit'  => (int)($_GET['limit'] ?? 10),
+//     'page'   => (int)($_GET['page'] ?? 1),
+//     'sort'   => $_GET['sort'] ?? 'school_name',
+//     'order'  => $_GET['order'] ?? 'asc'
+// ]);
 
-$schools       = $result['schools'];
-$totalRecords  = $result['totalRecords'];
-$totalPages    = $result['totalPages'];
-$page          = (int)($_GET['page'] ?? 1);
-$limit         = (int)($_GET['limit'] ?? 10);
-$search        = trim($_GET['search'] ?? '');
-$sort          = $_GET['sort'] ?? 'school_name';
-$order         = $_GET['order'] ?? 'asc';
+// $schools       = $result['schools'];
+// $totalRecords  = $result['totalRecords'];
+// $totalPages    = $result['totalPages'];
+// $page          = (int)($_GET['page'] ?? 1);
+// $limit         = (int)($_GET['limit'] ?? 10);
+// $search        = trim($_GET['search'] ?? '');
+// $sort          = $_GET['sort'] ?? 'school_name';
+// $order         = $_GET['order'] ?? 'asc';
 ?>
 
 <body class="bg-gray-50">
