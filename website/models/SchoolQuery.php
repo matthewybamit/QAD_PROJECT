@@ -1,5 +1,6 @@
 <?php
 
+// models/SchoolQuery.php
 class SchoolQuery
 {
     private $db;
@@ -12,95 +13,119 @@ class SchoolQuery
     /**
      * Get schools with pagination, search, and sorting
      */
-    public function getSchools($params = [])
-    {
-        $search = $params['search'] ?? '';
-        $limit = (int)($params['limit'] ?? 10);
-        $page = (int)($params['page'] ?? 1);
-        $sort = $params['sort'] ?? 'school_name';
-        $order = strtoupper($params['order'] ?? 'ASC');
-        
-        $offset = ($page - 1) * $limit;
+public function getSchools($params = [])
+{
+    $search = trim($params['search'] ?? '');
+    $limit = (int)($params['limit'] ?? 10);
+    $page = (int)($params['page'] ?? 1);
+    $sort = $params['sort'] ?? 'school_name';
+    $order = strtoupper($params['order'] ?? 'ASC');
+    
+    $offset = ($page - 1) * $limit;
 
-        // Validate sort column
-        $allowedSorts = [
-            'division_office', 'school_name', 'address', 'permit_no', 
-            'program_offering', 'contact_person', 'founding_year', 'created_at'
-        ];
-        
-        if (!in_array($sort, $allowedSorts)) {
-            $sort = 'school_name';
-        }
-
-        // Validate order
-        if (!in_array($order, ['ASC', 'DESC'])) {
-            $order = 'ASC';
-        }
-
-        try {
-            // Build query based on search
-            if (!empty($search)) {
-                $query = "SELECT * FROM schools WHERE 
-                        division_office LIKE :search OR 
-                        school_name LIKE :search OR 
-                        address LIKE :search OR 
-                        permit_no LIKE :search OR 
-                        program_offering LIKE :search OR 
-                        contact_person LIKE :search OR
-                        school_description LIKE :search
-                        ORDER BY {$sort} {$order} 
-                        LIMIT :limit OFFSET :offset";
-                
-                $stmt = $this->db->connection->prepare($query);
-                $searchTerm = "%{$search}%";
-                $stmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
-                $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-                $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-                $stmt->execute();
-            } else {
-                $query = "SELECT * FROM schools ORDER BY {$sort} {$order} LIMIT :limit OFFSET :offset";
-                $stmt = $this->db->connection->prepare($query);
-                $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-                $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-                $stmt->execute();
-            }
-
-            $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Get total count for pagination
-            if (!empty($search)) {
-                $countQuery = "SELECT COUNT(*) as total FROM schools WHERE 
-                             division_office LIKE :search OR 
-                             school_name LIKE :search OR 
-                             address LIKE :search OR 
-                             permit_no LIKE :search OR 
-                             program_offering LIKE :search OR 
-                             contact_person LIKE :search OR
-                             school_description LIKE :search";
-                $countStmt = $this->db->connection->prepare($countQuery);
-                $countStmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
-            } else {
-                $countQuery = "SELECT COUNT(*) as total FROM schools";
-                $countStmt = $this->db->connection->prepare($countQuery);
-            }
-            
-            $countStmt->execute();
-            $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
-            $totalPages = ceil($totalRecords / $limit);
-
-            return [
-                'schools' => $schools,
-                'totalRecords' => $totalRecords,
-                'totalPages' => $totalPages,
-                'currentPage' => $page,
-                'limit' => $limit
-            ];
-
-        } catch (Exception $e) {
-            throw new Exception("Error fetching schools: " . $e->getMessage());
-        }
+    // Validate sort column
+    $allowedSorts = [
+        'division_office', 'school_name', 'address', 'permit_no', 
+        'program_offering', 'contact_person', 'founding_year', 'created_at'
+    ];
+    
+    if (!in_array($sort, $allowedSorts)) {
+        $sort = 'school_name';
     }
 
+    if (!in_array($order, ['ASC', 'DESC'])) {
+        $order = 'ASC';
+    }
+
+    try {
+        // DEBUG: Log what we're searching for
+        error_log("Search term: '" . $search . "' (empty: " . (empty($search) ? 'YES' : 'NO') . ")");
+        
+        if (!empty($search)) {
+            // WITH SEARCH
+            $searchPattern = "%{$search}%";
+            
+            $query = "SELECT * FROM schools 
+                      WHERE division_office LIKE :s1 
+                         OR school_name LIKE :s2 
+                         OR address LIKE :s3 
+                         OR permit_no LIKE :s4 
+                         OR program_offering LIKE :s5 
+                         OR contact_person LIKE :s6
+                         OR school_description LIKE :s7
+                      ORDER BY {$sort} {$order} 
+                      LIMIT :lim OFFSET :off";
+            
+            error_log("Query with search: " . $query);
+            
+            $stmt = $this->db->connection->prepare($query);
+            $stmt->bindValue(':s1', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s2', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s3', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s4', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s5', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s6', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':s7', $searchPattern, PDO::PARAM_STR);
+            $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $countQuery = "SELECT COUNT(*) as total FROM schools 
+                          WHERE division_office LIKE :s1 
+                             OR school_name LIKE :s2 
+                             OR address LIKE :s3 
+                             OR permit_no LIKE :s4 
+                             OR program_offering LIKE :s5 
+                             OR contact_person LIKE :s6
+                             OR school_description LIKE :s7";
+            
+            $countStmt = $this->db->connection->prepare($countQuery);
+            $countStmt->bindValue(':s1', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s2', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s3', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s4', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s5', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s6', $searchPattern, PDO::PARAM_STR);
+            $countStmt->bindValue(':s7', $searchPattern, PDO::PARAM_STR);
+            $countStmt->execute();
+            
+        } else {
+            // WITHOUT SEARCH
+            $query = "SELECT * FROM schools ORDER BY {$sort} {$order} LIMIT :lim OFFSET :off";
+            
+            error_log("Query without search: " . $query);
+            error_log("Limit: {$limit}, Offset: {$offset}");
+            
+            $stmt = $this->db->connection->prepare($query);
+            $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $countQuery = "SELECT COUNT(*) as total FROM schools";
+            $countStmt = $this->db->connection->prepare($countQuery);
+            $countStmt->execute();
+        }
+        
+        $totalRecords = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $totalPages = $limit > 0 ? ceil($totalRecords / $limit) : 1;
+
+        return [
+            'schools' => $schools,
+            'totalRecords' => $totalRecords,
+            'totalPages' => $totalPages,
+            'currentPage' => $page,
+            'limit' => $limit
+        ];
+
+    } catch (PDOException $e) {
+        error_log("PDO Exception at line " . __LINE__);
+        error_log("Error message: " . $e->getMessage());
+        error_log("Error code: " . $e->getCode());
+        throw new Exception("Error fetching schools: " . $e->getMessage());
+    }
+}
     /**
      * Get a single school by ID
      */
@@ -159,6 +184,27 @@ class SchoolQuery
             throw new Exception("Error updating school: " . $e->getMessage());
         }
     }
+
+        /**
+         * Get school count by division office
+         */
+        public function getSchoolCountByDivision()
+        {
+            try {
+                $query = "SELECT division_office, COUNT(*) as school_count 
+                        FROM schools 
+                        GROUP BY division_office 
+                        ORDER BY school_count DESC, division_office ASC";
+                
+                $stmt = $this->db->connection->prepare($query);
+                $stmt->execute();
+                
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                error_log("getDivisionStats Error: " . $e->getMessage());
+                return [];
+            }
+        }
 
     /**
      * Handle logo upload for a school

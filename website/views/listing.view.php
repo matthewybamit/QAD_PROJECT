@@ -1,29 +1,61 @@
 <?php require_once 'partials/head.php'; ?>
 <?php
-require_once 'models/SchoolQuery.php';
-
-// $schoolQuery = new SchoolQuery($db);
-// $result = $schoolQuery->getSchools([
-//     'search' => $_GET['search'] ?? '',
-//     'limit'  => (int)($_GET['limit'] ?? 10),
-//     'page'   => (int)($_GET['page'] ?? 1),
-//     'sort'   => $_GET['sort'] ?? 'school_name',
-//     'order'  => $_GET['order'] ?? 'asc'
-// ]);
-
-// $schools       = $result['schools'];
-// $totalRecords  = $result['totalRecords'];
-// $totalPages    = $result['totalPages'];
-// $page          = (int)($_GET['page'] ?? 1);
-// $limit         = (int)($_GET['limit'] ?? 10);
-// $search        = trim($_GET['search'] ?? '');
-// $sort          = $_GET['sort'] ?? 'school_name';
-// $order         = $_GET['order'] ?? 'asc';
+// views/listing.view.php
 ?>
 
 <body class="bg-gray-50">
     <?php require_once 'partials/nav.php'; ?>
-
+<!-- Division Statistics Cards -->
+<?php if (!empty($divisionStats)): ?>
+<div class="mb-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                Schools by Division Office
+            </h2>
+            <span class="text-sm text-gray-500">
+                Total: <?= number_format($totalRecords) ?> schools
+            </span>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <?php 
+            $maxCount = !empty($divisionStats) ? max(array_column($divisionStats, 'school_count')) : 1;
+            foreach ($divisionStats as $stat): 
+                $percentage = ($stat['school_count'] / $maxCount) * 100;
+            ?>
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow duration-200">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-700 line-clamp-2" title="<?= htmlspecialchars($stat['division_office']) ?>">
+                        <?= htmlspecialchars($stat['division_office']) ?>
+                    </h3>
+                    <span class="ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold">
+                        <?= $stat['school_count'] ?>
+                    </span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500"
+                         style="width: <?= $percentage ?>%"></div>
+                </div>
+                
+                <div class="mt-2 flex items-center justify-between text-xs">
+                    <span class="text-gray-600">
+                        <?= number_format(($stat['school_count'] / $totalRecords) * 100, 1) ?>% of total
+                    </span>
+                    <a href="?search=<?= urlencode($stat['division_office']) ?>" 
+                       class="text-blue-600 hover:text-blue-800 font-medium">
+                        View <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
     <!-- Main Container with responsive padding -->
     <div class="px-4 sm:px-6 lg:px-8 pt-24 pb-6">
         <!-- Page Title - Responsive text size -->

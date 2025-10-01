@@ -34,7 +34,7 @@ public function index() {
     $ipWhitelist = $this->getIPWhitelist();
     $activeSessions = $this->getActiveSessions();
 
-    require 'views/security.view.php';
+    require_once 'views/security.view.php';
 }
 
     

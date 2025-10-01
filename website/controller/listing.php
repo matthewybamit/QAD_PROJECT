@@ -3,6 +3,8 @@
 require_once 'models/SchoolQuery.php';
 
 $schoolQuery = new SchoolQuery($db);
+
+// Get schools list
 $result = $schoolQuery->getSchools([
     'search' => $_GET['search'] ?? '',
     'limit'  => (int)($_GET['limit'] ?? 10),
@@ -14,7 +16,14 @@ $result = $schoolQuery->getSchools([
 $schools = $result['schools'];
 $totalRecords = $result['totalRecords'];
 $totalPages = $result['totalPages'];
-// ... other variables
+$page = $result['currentPage'];
+$limit = $result['limit'];
+$search = $_GET['search'] ?? '';
+$sort = $_GET['sort'] ?? 'school_name';
+$order = $_GET['order'] ?? 'asc';
+
+// Get division statistics
+$divisionStats = $schoolQuery->getSchoolCountByDivision();
 
 // Include the view
 require 'views/listing.view.php';
