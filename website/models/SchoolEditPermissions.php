@@ -5,7 +5,6 @@ class SchoolEditPermissions {
     
     public function __construct($pdo) {
         $this->pdo = $pdo;
-        // Always cleanup expired rows on object creation
         $this->cleanupExpiredPermissions();
     }
     
@@ -14,7 +13,6 @@ class SchoolEditPermissions {
      */
     public function requestEditPermission($userId, $schoolId, $reason) {
         try {
-            // Cleanup first
             $this->cleanupExpiredPermissions();
 
             // Check if user already has an active request
@@ -37,7 +35,6 @@ class SchoolEditPermissions {
             ");
             $stmt->execute([$userId, $schoolId, $reason]);
             
-            // Log the request
             $this->logActivity($userId, 'permission_requested', "Requested edit permission for school ID: $schoolId");
             
             return ['success' => true, 'message' => 'Permission request submitted successfully. Admin will review shortly.'];
@@ -64,19 +61,56 @@ class SchoolEditPermissions {
             throw new Exception("Request not found.");
         }
 
-        // Allow cancellation if pending or expired
-        if (!in_array($row['status'], ['pending', 'expired'])) {
-            throw new Exception("Only pending or expired requests can be cancelled.");
+        // Allow cancellation if pending, expired, or returned
+        if (!in_array($row['status'], ['pending', 'expired', 'returned'])) {
+            throw new Exception("Only pending, expired, or returned requests can be cancelled.");
         }
 
-        // Delete request entirely
         $deleteStmt = $this->pdo->prepare("DELETE FROM school_edit_permissions WHERE id = ?");
         $deleteStmt->execute([$requestId]);
 
-        // Log it
         $this->logActivity($userId, 'permission_cancelled', "Cancelled request ID: $requestId");
 
         return true;
+    }
+
+    /**
+     * Resubmit a returned request with updated reason
+     */
+    public function resubmitRequest($requestId, $userId, $updatedReason) {
+        try {
+            $this->cleanupExpiredPermissions();
+
+            // Verify request exists and is in returned status
+            $stmt = $this->pdo->prepare("
+                SELECT * FROM school_edit_permissions
+                WHERE id = ? AND user_id = ? AND status = 'returned'
+            ");
+            $stmt->execute([$requestId, $userId]);
+            $request = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$request) {
+                throw new Exception("Request not found or cannot be resubmitted.");
+            }
+
+            // Update request back to pending with new reason
+            $stmt = $this->pdo->prepare("
+                UPDATE school_edit_permissions 
+                SET status = 'pending', 
+                    reason = ?, 
+                    admin_remarks = NULL,
+                    requested_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([$updatedReason, $requestId]);
+
+            $this->logActivity($userId, 'permission_resubmitted', "Resubmitted request ID: $requestId");
+
+            return ['success' => true, 'message' => 'Request resubmitted successfully.'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     /**
@@ -90,13 +124,16 @@ class SchoolEditPermissions {
             
             $stmt = $this->pdo->prepare("
                 UPDATE school_edit_permissions 
-                SET status = 'approved', approved_at = NOW(), expires_at = ?, approved_by = ?
+                SET status = 'approved', 
+                    approved_at = NOW(), 
+                    expires_at = ?, 
+                    approved_by = ?,
+                    admin_remarks = NULL
                 WHERE id = ? AND status = 'pending'
             ");
             $stmt->execute([$expiresAt, $adminId, $permissionId]);
             
             if ($stmt->rowCount() > 0) {
-                // Get request details for logging
                 $stmt = $this->pdo->prepare("SELECT user_id, school_id FROM school_edit_permissions WHERE id = ?");
                 $stmt->execute([$permissionId]);
                 $request = $stmt->fetch();
@@ -112,18 +149,53 @@ class SchoolEditPermissions {
     }
     
     /**
-     * Deny permission (admin only)
+     * Return permission with remarks (admin only)
      */
-    public function denyPermission($permissionId, $adminId) {
+    public function returnPermission($permissionId, $adminId, $remarks) {
+        try {
+            $this->cleanupExpiredPermissions();
+
+            if (empty($remarks)) {
+                throw new Exception("Remarks are required when returning a request.");
+            }
+
+            $stmt = $this->pdo->prepare("
+                UPDATE school_edit_permissions 
+                SET status = 'returned', 
+                    approved_by = ?,
+                    admin_remarks = ?,
+                    approved_at = NOW()
+                WHERE id = ? AND status = 'pending'
+            ");
+            $stmt->execute([$adminId, $remarks, $permissionId]);
+            
+            if ($stmt->rowCount() > 0) {
+                $this->logActivity($adminId, 'permission_returned', "Returned permission request ID: $permissionId with remarks");
+                return true;
+            }
+            return false;
+            
+        } catch (Exception $e) {
+            error_log("Return permission error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Deny permission (admin only) - Keep for permanent rejection
+     */
+    public function denyPermission($permissionId, $adminId, $remarks = null) {
         try {
             $this->cleanupExpiredPermissions();
 
             $stmt = $this->pdo->prepare("
                 UPDATE school_edit_permissions 
-                SET status = 'denied', approved_by = ?
+                SET status = 'denied', 
+                    approved_by = ?,
+                    admin_remarks = ?
                 WHERE id = ? AND status = 'pending'
             ");
-            $stmt->execute([$adminId, $permissionId]);
+            $stmt->execute([$adminId, $remarks, $permissionId]);
             
             if ($stmt->rowCount() > 0) {
                 $this->logActivity($adminId, 'permission_denied', "Denied permission request ID: $permissionId");
