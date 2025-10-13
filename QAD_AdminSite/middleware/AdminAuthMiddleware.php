@@ -107,71 +107,138 @@
 // middleware/AdminAuthMiddleware.php
 // Cleaned up: maintenance mode removed. Keeps auth + optional IP whitelist.
 
+
 class AdminAuthMiddleware {
     private $adminAuth;
+    private const ALLOWED_REDIRECT_PATHS = [
+        '/admin/dashboard',
+        '/admin/permissions',
+        '/admin/users',
+        '/admin/schools',
+        '/admin/security'
+    ];
 
     public function __construct($adminAuth) {
         $this->adminAuth = $adminAuth;
+        $this->ensureSecureSession();
+    }
+
+    private function ensureSecureSession() {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_secure', '1');
+            ini_set('session.cookie_samesite', 'Strict');
+            ini_set('session.use_strict_mode', '1');
+            ini_set('session.use_only_cookies', '1');
+            ini_set('session.gc_maxlifetime', '1800'); // 30 min
+            session_start();
+        }
     }
 
     public function handle($request, $next) {
-        // --------------------------
-        // Authentication
-        // --------------------------
+        // Authentication check
         if (!$this->adminAuth->validateSession()) {
-            if ($this->isAjaxRequest()) {
-                http_response_code(401);
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Unauthorized', 'redirect' => '/admin/login']);
-                exit;
-            } else {
-                // Save intended URL and redirect to login page
-                if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
-                $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'] ?? '/';
-                header('Location: /admin/login');
-                exit;
+            return $this->handleUnauthenticated();
+        }
+
+        // Session regeneration for security
+        if (!isset($_SESSION['last_regeneration']) || 
+            (time() - $_SESSION['last_regeneration']) > 300) {
+            session_regenerate_id(true);
+            $_SESSION['last_regeneration'] = time();
+        }
+
+        // IP whitelist check
+        if (class_exists('AdminSecurity') && 
+            AdminSecurity::getSecurityConfig('ip_whitelist_enabled', false)) {
+            if (!$this->validateIPWhitelist()) {
+                return $this->handleIPBlocked();
             }
         }
 
-        // --------------------------
-        // Optional: IP whitelist enforcement
-        // --------------------------
-        // Only enforce if AdminSecurity exists and ip_whitelist_enabled is true
-        if (class_exists('AdminSecurity')) {
-            $whitelistEnabled = (int) AdminSecurity::getSecurityConfig('ip_whitelist_enabled', 0);
-            if ($whitelistEnabled) {
-                $remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
-                // Ensure validateIP exists
-                if (method_exists('AdminSecurity', 'validateIP')) {
-                    $allowed = AdminSecurity::validateIP($remoteIp);
-                } else {
-                    // If validateIP not implemented, default to deny (safer)
-                    $allowed = false;
-                }
-
-                if (!$allowed) {
-                    AdminSecurity::logSecurityEvent(
-                        $_SESSION['admin_user_id'] ?? null,
-                        'IP_BLOCKED',
-                        'Access denied from unauthorized IP',
-                        $remoteIp,
-                        $_SERVER['HTTP_USER_AGENT'] ?? ''
-                    );
-
-                    http_response_code(403);
-                    if ($this->isAjaxRequest()) {
-                        header('Content-Type: application/json');
-                        echo json_encode(['error' => 'Access denied from your IP address']);
-                    } else {
-                        echo '<h1>Access Denied</h1><p>Your IP address is not authorized to access this admin panel.</p>';
-                    }
-                    exit;
-                }
-            }
-        }
-
-        // Continue to next middleware/controller
         return $next($request);
+    }
+
+    private function handleUnauthenticated() {
+        $this->setSecureIntendedUrl();
+        
+        if ($this->isAjaxRequest()) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'error' => 'Unauthorized',
+                'redirect' => '/admin/login'
+            ]);
+        } else {
+            header('Location: /admin/login', true, 302);
+        }
+        exit;
+    }
+
+    private function setSecureIntendedUrl() {
+        $uri = $_SERVER['REQUEST_URI'] ?? '/admin/dashboard';
+        $parsed = parse_url($uri);
+        $path = $parsed['path'] ?? '/admin/dashboard';
+
+        // Validate path
+        if (strpos($path, '/admin/') === 0 && 
+            !preg_match('/\.\.|\/{2,}|[<>"\']/', $path) &&
+            strlen($path) < 200) {
+            $_SESSION['intended_url'] = $path;
+        } else {
+            $_SESSION['intended_url'] = '/admin/dashboard';
+        }
+    }
+
+    private function validateIPWhitelist() {
+        $ip = $this->getValidatedClientIP();
+        
+        if (!AdminSecurity::validateIP($ip)) {
+            AdminSecurity::logSecurityEvent(
+                $_SESSION['admin_user_id'] ?? null,
+                'IP_BLOCKED',
+                'Access denied from unauthorized IP',
+                $this->anonymizeIP($ip),
+                $this->sanitizeUserAgent()
+            );
+            return false;
+        }
+        
+        return true;
+    }
+
+    private function getValidatedClientIP() {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            return '0.0.0.0';
+        }
+        
+        return $ip;
+    }
+
+    private function anonymizeIP($ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return preg_replace('/\.\d+$/', '.xxx', $ip);
+        }
+        return preg_replace('/:[^:]+:[^:]+$/', ':xxxx:xxxx', $ip);
+    }
+
+    private function sanitizeUserAgent() {
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+        return substr($ua, 0, 200); // Limit length
+    }
+
+    private function handleIPBlocked() {
+        http_response_code(403);
+        
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Access denied']);
+        } else {
+            echo '<h1>Access Denied</h1><p>Access denied. Contact administrator if this is an error.</p>';
+        }
+        exit;
     }
 
     private function isAjaxRequest() {

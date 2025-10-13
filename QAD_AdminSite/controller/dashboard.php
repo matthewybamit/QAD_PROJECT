@@ -1,5 +1,5 @@
 <?php
-// controllers/Dashboard.php - Simple debug to find the issue
+// controllers/Dashboard.php
 require_once '../website/models/SchoolQuery.php';
 
 class AdminDashboard {
@@ -18,11 +18,9 @@ class AdminDashboard {
         $recentActivity = $this->getRecentActivity();
         $pendingPermissions = $this->getPendingPermissions();
         
-        // Debug: Log what we're passing to the view
         error_log("=== DASHBOARD DEBUG OUTPUT ===");
         error_log("Stats: " . json_encode($stats));
         error_log("Recent Activity Count: " . count($recentActivity));
-        error_log("Recent Activity Data: " . json_encode($recentActivity));
         error_log("Pending Permissions Count: " . count($pendingPermissions));
         error_log("===============================");
         
@@ -41,8 +39,12 @@ class AdminDashboard {
             $stmt->execute();
             $totalSchools = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total_schools'];
 
-            // Pending edit requests
-            $stmt = $this->db->prepare("SELECT COUNT(*) as pending_permissions FROM school_edit_permissions WHERE status = 'pending'");
+            // Pending edit requests (including returned)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as pending_permissions 
+                FROM school_edit_permissions 
+                WHERE status IN ('pending', 'returned')
+            ");
             $stmt->execute();
             $pendingPermissions = (int)$stmt->fetch(PDO::FETCH_ASSOC)['pending_permissions'];
 
@@ -94,13 +96,19 @@ class AdminDashboard {
     
     private function getPendingPermissions($limit = 5) {
         try {
+            // Include both pending and returned requests
             $sql = "
                 SELECT sep.*, au.name as user_name, au.email as user_email, s.school_name
                 FROM school_edit_permissions sep
                 JOIN admin_users au ON sep.user_id = au.id
                 JOIN schools s ON sep.school_id = s.id
-                WHERE sep.status = 'pending'
-                ORDER BY sep.requested_at DESC
+                WHERE sep.status IN ('pending', 'returned')
+                ORDER BY 
+                    CASE sep.status 
+                        WHEN 'pending' THEN 1
+                        WHEN 'returned' THEN 2
+                    END,
+                    sep.requested_at DESC
                 LIMIT ?
             ";
             $stmt = $this->db->prepare($sql);
@@ -114,12 +122,10 @@ class AdminDashboard {
     }
 }
 
-// Test environment
 error_log("Dashboard: Starting dashboard execution");
 error_log("Dashboard: Database available: " . (isset($db) ? 'YES' : 'NO'));
 error_log("Dashboard: AdminAuth available: " . (isset($adminAuth) ? 'YES' : 'NO'));
 
-// Create and run dashboard
 $dashboard = new AdminDashboard($db, $adminAuth);
 $dashboard->index();
 

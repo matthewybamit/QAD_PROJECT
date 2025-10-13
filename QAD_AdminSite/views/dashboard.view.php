@@ -1,7 +1,5 @@
 <?php
 // views/dashboard.php
-// Replace your current dashboard view with this file.
-
 $pageTitle = 'Dashboard';
 $currentPage = 'dashboard';
 require_once 'partials/admin_head.php';
@@ -14,7 +12,6 @@ require_once 'partials/admin_head.php';
         <?php require_once 'partials/admin_sidebar.php'; ?>
 
         <main class="flex-1 p-8">
-            <!-- Flash Messages -->
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
                     <?= htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8') ?>
@@ -29,7 +26,6 @@ require_once 'partials/admin_head.php';
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
-            <!-- Dashboard Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
                 <p class="text-gray-600 mt-2">Welcome back, <?= htmlspecialchars($currentUser['name'] ?? 'Admin', ENT_QUOTES, 'UTF-8') ?>. Here's what's happening.</p>
@@ -40,7 +36,7 @@ require_once 'partials/admin_head.php';
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                            <i class="fa-solid fa-users text-xl fa-icon" aria-hidden="true"></i>
+                            <i class="fa-solid fa-users text-xl" aria-hidden="true"></i>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900"><?= (int)($stats['total_users'] ?? 0) ?></h3>
@@ -52,7 +48,7 @@ require_once 'partials/admin_head.php';
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-green-100 text-green-600">
-                            <i class="fa-solid fa-school text-xl fa-icon" aria-hidden="true"></i>
+                            <i class="fa-solid fa-school text-xl" aria-hidden="true"></i>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900"><?= (int)($stats['total_schools'] ?? 0) ?></h3>
@@ -64,11 +60,11 @@ require_once 'partials/admin_head.php';
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                            <i class="fa-solid fa-clock text-xl fa-icon" aria-hidden="true"></i>
+                            <i class="fa-solid fa-clock text-xl" aria-hidden="true"></i>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900"><?= (int)($stats['pending_permissions'] ?? 0) ?></h3>
-                            <p class="text-sm text-gray-500">Pending Permissions</p>
+                            <p class="text-sm text-gray-500">Pending/Returned</p>
                         </div>
                     </div>
                 </div>
@@ -76,7 +72,7 @@ require_once 'partials/admin_head.php';
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                            <i class="fa-solid fa-user-shield text-xl fa-icon" aria-hidden="true"></i>
+                            <i class="fa-solid fa-user-shield text-xl" aria-hidden="true"></i>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900"><?= (int)($stats['active_sessions'] ?? 0) ?></h3>
@@ -88,7 +84,7 @@ require_once 'partials/admin_head.php';
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-red-100 text-red-600">
-                            <i class="fa-solid fa-triangle-exclamation text-xl fa-icon" aria-hidden="true"></i>
+                            <i class="fa-solid fa-triangle-exclamation text-xl" aria-hidden="true"></i>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900"><?= (int)($stats['security_incidents'] ?? 0) ?></h3>
@@ -113,21 +109,20 @@ require_once 'partials/admin_head.php';
                                     <div class="flex items-start space-x-3">
                                         <div class="flex-shrink-0">
                                             <?php
-                                            // Map actions to FA6 classes + color
                                             $iconMap = [
                                                 'ADMIN_LOGIN' => ['classes' => 'fa-solid fa-right-to-bracket', 'color' => 'text-green-500'],
                                                 'ADMIN_LOGOUT' => ['classes' => 'fa-solid fa-right-from-bracket', 'color' => 'text-gray-500'],
                                                 'PERMISSION_APPROVED' => ['classes' => 'fa-solid fa-check', 'color' => 'text-green-500'],
+                                                'PERMISSION_RETURNED' => ['classes' => 'fa-solid fa-undo', 'color' => 'text-orange-500'],
                                                 'PERMISSION_DENIED' => ['classes' => 'fa-solid fa-xmark', 'color' => 'text-red-500'],
                                                 'FAILED_LOGIN' => ['classes' => 'fa-solid fa-triangle-exclamation', 'color' => 'text-red-500'],
                                                 'IP_BLOCKED' => ['classes' => 'fa-solid fa-ban', 'color' => 'text-red-500'],
                                                 'DEFAULT' => ['classes' => 'fa-solid fa-circle-info', 'color' => 'text-blue-500']
                                             ];
-
                                             $map = $iconMap[$activity['action']] ?? $iconMap['DEFAULT'];
                                             $iconClass = trim(($map['color'] ?? '') . ' ' . ($map['classes'] ?? ''));
                                             ?>
-                                            <i class="<?= htmlspecialchars($iconClass, ENT_QUOTES, 'UTF-8') ?> fa-icon" aria-hidden="true"></i>
+                                            <i class="<?= htmlspecialchars($iconClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm text-gray-900">
@@ -162,38 +157,76 @@ require_once 'partials/admin_head.php';
                         <?php else: ?>
                             <div class="space-y-4">
                                 <?php foreach ($pendingPermissions as $permission): ?>
-                                    <div class="border rounded-lg p-4">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <h3 class="font-medium text-gray-900"><?= htmlspecialchars($permission['user_name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                    <div class="border rounded-lg p-4 <?= $permission['status'] === 'returned' ? 'border-orange-200 bg-orange-50' : '' ?>">
+                                        <div class="flex items-start justify-between mb-2">
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h3 class="font-medium text-gray-900"><?= htmlspecialchars($permission['user_name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                                    <?php if ($permission['status'] === 'returned'): ?>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                                            <i class="fa-solid fa-undo mr-1"></i>Returned
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
                                                 <p class="text-sm text-gray-600"><?= htmlspecialchars($permission['school_name'], ENT_QUOTES, 'UTF-8') ?></p>
                                                 <p class="text-xs text-gray-500 mt-1">
-                                                    Requested: <?= htmlspecialchars(date('M j, g:i A', strtotime($permission['requested_at'] ?? 'now')), ENT_QUOTES, 'UTF-8') ?>
+                                                    <?= htmlspecialchars(date('M j, g:i A', strtotime($permission['requested_at'] ?? 'now')), ENT_QUOTES, 'UTF-8') ?>
                                                 </p>
                                             </div>
-                                            <div class="flex space-x-2">
+                                            <div class="flex items-center space-x-2 ml-3">
+                                                <!-- Approve Button -->
                                                 <form method="POST" action="/admin/permissions" class="inline">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(function_exists('AdminSecurity') && method_exists('AdminSecurity','generateCSRFToken') ? AdminSecurity::generateCSRFToken() : ($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                                                     <input type="hidden" name="action" value="approve">
                                                     <input type="hidden" name="permission_id" value="<?= (int)$permission['id'] ?>">
-                                                    <button type="submit" class="text-green-600 hover:text-green-800 text-sm" aria-label="Approve">
-                                                        <i class="fa-solid fa-check"></i>
+                                                    <button type="submit" class="text-green-600 hover:text-green-800" title="Approve">
+                                                        <i class="fa-solid fa-check text-lg"></i>
                                                     </button>
                                                 </form>
-                                                <form method="POST" action="/admin/permissions" class="inline">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(function_exists('AdminSecurity') && method_exists('AdminSecurity','generateCSRFToken') ? AdminSecurity::generateCSRFToken() : ($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                                    <input type="hidden" name="action" value="deny">
-                                                    <input type="hidden" name="permission_id" value="<?= (int)$permission['id'] ?>">
-                                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm" aria-label="Deny">
-                                                        <i class="fa-solid fa-xmark"></i>
+                                                
+                                                <!-- Return Button (only for pending, not already returned) -->
+                                                <?php if ($permission['status'] === 'pending'): ?>
+                                                    <button class="text-orange-600 hover:text-orange-800 return-btn-quick"
+                                                            data-permission-id="<?= (int)$permission['id'] ?>"
+                                                            data-user-name="<?= htmlspecialchars($permission['user_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                                            title="Return for Revision">
+                                                        <i class="fa-solid fa-undo text-lg"></i>
                                                     </button>
-                                                </form>
+                                                <?php endif; ?>
+                                                
+                                                <!-- Deny Button -->
+                                                <button class="text-red-600 hover:text-red-800 deny-btn-quick"
+                                                        data-permission-id="<?= (int)$permission['id'] ?>"
+                                                        data-user-name="<?= htmlspecialchars($permission['user_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        title="Deny">
+                                                    <i class="fa-solid fa-xmark text-lg"></i>
+                                                </button>
+                                                
+                                                <!-- View Details Button -->
+                                                <button class="text-gray-600 hover:text-gray-800 view-details-btn-dash"
+                                                        data-permission="<?= htmlspecialchars(json_encode($permission), ENT_QUOTES, 'UTF-8') ?>"
+                                                        title="View Full Details">
+                                                    <i class="fa-solid fa-eye text-lg"></i>
+                                                </button>
                                             </div>
                                         </div>
+                                        
+                                        <!-- Reason -->
                                         <?php if (!empty($permission['reason'])): ?>
-                                            <p class="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
-                                                <?= htmlspecialchars($permission['reason'], ENT_QUOTES, 'UTF-8') ?>
-                                            </p>
+                                            <div class="mt-2 p-2 <?= $permission['status'] === 'returned' ? 'bg-white' : 'bg-gray-50' ?> rounded border border-gray-200">
+                                                <p class="text-xs font-medium text-gray-700 mb-1">Request Reason:</p>
+                                                <p class="text-sm text-gray-800"><?= htmlspecialchars($permission['reason'], ENT_QUOTES, 'UTF-8') ?></p>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Admin Remarks (for returned requests) -->
+                                        <?php if (!empty($permission['admin_remarks']) && $permission['status'] === 'returned'): ?>
+                                            <div class="mt-2 p-2 bg-orange-100 border border-orange-300 rounded">
+                                                <p class="text-xs font-semibold text-orange-800 mb-1">
+                                                    <i class="fa-solid fa-exclamation-circle mr-1"></i>Admin Feedback:
+                                                </p>
+                                                <p class="text-sm text-orange-900"><?= htmlspecialchars($permission['admin_remarks'], ENT_QUOTES, 'UTF-8') ?></p>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
@@ -204,6 +237,197 @@ require_once 'partials/admin_head.php';
             </div>
         </main>
     </div>
+
+    <!-- Permission Details Modal (for dashboard) -->
+    <div id="dashDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Permission Details</h3>
+                        <button onclick="closeDashDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="dashPermissionDetails"></div>
+                    <div class="mt-6 flex justify-end">
+                        <a href="/admin/permissions" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Go to Permissions Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Return Modal -->
+    <div id="quickReturnModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Return Request for Revision</h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Return to <strong id="quickReturnUserName"></strong> with feedback for them to revise and resubmit.
+                    </p>
+                    <form method="POST" action="/admin/permissions">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="action" value="return">
+                        <input type="hidden" name="permission_id" id="quickReturnPermissionId">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Feedback (Required):</label>
+                            <textarea name="admin_remarks" rows="4" required 
+                                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                                     placeholder="Explain what needs to be corrected or clarified..."></textarea>
+                            <p class="mt-1 text-xs text-gray-500">Be specific so the user knows how to improve their request.</p>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" onclick="closeQuickReturnModal()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                                <i class="fa-solid fa-undo mr-2"></i>Return Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Deny Modal -->
+    <div id="quickDenyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-medium text-red-900 mb-4">Permanently Deny Request</h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        This will <strong class="text-red-600">permanently deny</strong> the request from <strong id="quickDenyUserName"></strong>. They will NOT be able to resubmit.
+                    </p>
+                    <form method="POST" action="/admin/permissions">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="action" value="deny">
+                        <input type="hidden" name="permission_id" id="quickDenyPermissionId">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Denial (Optional):</label>
+                            <textarea name="admin_remarks" rows="3" 
+                                     class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500"
+                                     placeholder="Optional: Explain why this is being permanently denied..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" onclick="closeQuickDenyModal()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                <i class="fa-solid fa-ban mr-2"></i>Permanently Deny
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Dashboard Details Modal Handler
+    document.querySelectorAll('.view-details-btn-dash').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const p = JSON.parse(this.dataset.permission);
+            let html = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">User:</label>
+                        <p class="text-gray-900">${p.user_name} (${p.user_email || p.email})</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">School:</label>
+                        <p class="text-gray-900">${p.school_name}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Request Reason:</label>
+                        <p class="text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">${p.reason || 'No reason provided'}</p>
+                    </div>
+            `;
+            
+            if (p.admin_remarks) {
+                html += `
+                    <div class="bg-orange-50 border border-orange-200 rounded p-3">
+                        <label class="text-sm font-medium text-orange-800"><i class="fa-solid fa-exclamation-circle mr-1"></i>Admin Feedback:</label>
+                        <p class="text-orange-900 mt-1">${p.admin_remarks}</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Status:</label>
+                        <p class="text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${p.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : p.status === 'returned' ? 'bg-orange-100 text-orange-800' : p.status === 'approved' ? 'bg-green-100 text-green-800' : p.status === 'denied' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Requested At:</label>
+                        <p class="text-gray-900">${new Date(p.requested_at).toLocaleString()}</p>
+                    </div>
+            `;
+            
+            if (p.expires_at) {
+                html += `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Expires At:</label>
+                        <p class="text-gray-900">${new Date(p.expires_at).toLocaleString()}</p>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            document.getElementById('dashPermissionDetails').innerHTML = html;
+            document.getElementById('dashDetailsModal').classList.remove('hidden');
+        });
+    });
+    
+    function closeDashDetailsModal() {
+        document.getElementById('dashDetailsModal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('dashDetailsModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeDashDetailsModal();
+    });
+
+    // Quick Return Modal
+    document.querySelectorAll('.return-btn-quick').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('quickReturnPermissionId').value = this.dataset.permissionId;
+            document.getElementById('quickReturnUserName').textContent = this.dataset.userName;
+            document.getElementById('quickReturnModal').classList.remove('hidden');
+        });
+    });
+    
+    function closeQuickReturnModal() {
+        document.getElementById('quickReturnModal').classList.add('hidden');
+    }
+
+    // Quick Deny Modal - FIXED: Changed .add to .remove
+    document.querySelectorAll('.deny-btn-quick').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('quickDenyPermissionId').value = this.dataset.permissionId;
+            document.getElementById('quickDenyUserName').textContent = this.dataset.userName;
+            document.getElementById('quickDenyModal').classList.remove('hidden'); // FIXED
+        });
+    });
+    
+    function closeQuickDenyModal() {
+        document.getElementById('quickDenyModal').classList.add('hidden');
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('quickReturnModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeQuickReturnModal();
+    });
+    
+    document.getElementById('quickDenyModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeQuickDenyModal();
+    });
+    </script>
 
     <script src="/assets/js/admin.js"></script>
 </body>

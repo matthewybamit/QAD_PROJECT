@@ -7,204 +7,149 @@ class SchoolQuery
 
     public function __construct($database)
     {
-        $this->db = $database;
+        $this->db = $database; // <-- $database is already a PDO connection
     }
 
     /**
      * Get schools with pagination, search, and sorting
      */
-public function getSchools($params = [])
-{
-    $search = trim($params['search'] ?? '');
-    $limit = (int)($params['limit'] ?? 10);
-    $page = (int)($params['page'] ?? 1);
-    $sort = $params['sort'] ?? 'school_name';
-    $order = strtoupper($params['order'] ?? 'ASC');
-    
-    $offset = ($page - 1) * $limit;
+    public function getSchools($params = [])
+    {
+        $search = trim($params['search'] ?? '');
+        $limit = (int)($params['limit'] ?? 10);
+        $page = (int)($params['page'] ?? 1);
+        $sort = $params['sort'] ?? 'school_name';
+        $order = strtoupper($params['order'] ?? 'ASC');
+        $offset = ($page - 1) * $limit;
 
-    // Validate sort column
-    $allowedSorts = [
-        'division_office', 'school_name', 'address', 'permit_no', 
-        'program_offering', 'contact_person', 'founding_year', 'created_at'
-    ];
-    
-    if (!in_array($sort, $allowedSorts)) {
-        $sort = 'school_name';
-    }
+        $allowedSorts = [
+            'division_office', 'school_name', 'address', 'permit_no',
+            'program_offering', 'contact_person', 'founding_year', 'created_at'
+        ];
+        if (!in_array($sort, $allowedSorts)) $sort = 'school_name';
+        if (!in_array($order, ['ASC', 'DESC'])) $order = 'ASC';
 
-    if (!in_array($order, ['ASC', 'DESC'])) {
-        $order = 'ASC';
-    }
+        try {
+            error_log("Search term: '{$search}'");
 
-    try {
-        // DEBUG: Log what we're searching for
-        error_log("Search term: '" . $search . "' (empty: " . (empty($search) ? 'YES' : 'NO') . ")");
-        
-        if (!empty($search)) {
-            // WITH SEARCH
-            $searchPattern = "%{$search}%";
-            
-            $query = "SELECT * FROM schools 
-                      WHERE division_office LIKE :s1 
-                         OR school_name LIKE :s2 
-                         OR address LIKE :s3 
-                         OR permit_no LIKE :s4 
-                         OR program_offering LIKE :s5 
-                         OR contact_person LIKE :s6
-                         OR school_description LIKE :s7
-                      ORDER BY {$sort} {$order} 
-                      LIMIT :lim OFFSET :off";
-            
-            error_log("Query with search: " . $query);
-            
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->bindValue(':s1', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s2', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s3', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s4', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s5', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s6', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':s7', $searchPattern, PDO::PARAM_STR);
-            $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $countQuery = "SELECT COUNT(*) as total FROM schools 
+            if (!empty($search)) {
+                $searchPattern = "%{$search}%";
+                $query = "SELECT * FROM schools 
                           WHERE division_office LIKE :s1 
                              OR school_name LIKE :s2 
                              OR address LIKE :s3 
                              OR permit_no LIKE :s4 
                              OR program_offering LIKE :s5 
                              OR contact_person LIKE :s6
-                             OR school_description LIKE :s7";
-            
-            $countStmt = $this->db->connection->prepare($countQuery);
-            $countStmt->bindValue(':s1', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s2', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s3', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s4', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s5', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s6', $searchPattern, PDO::PARAM_STR);
-            $countStmt->bindValue(':s7', $searchPattern, PDO::PARAM_STR);
-            $countStmt->execute();
-            
-        } else {
-            // WITHOUT SEARCH
-            $query = "SELECT * FROM schools ORDER BY {$sort} {$order} LIMIT :lim OFFSET :off";
-            
-            error_log("Query without search: " . $query);
-            error_log("Limit: {$limit}, Offset: {$offset}");
-            
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                             OR school_description LIKE :s7
+                          ORDER BY {$sort} {$order} 
+                          LIMIT :lim OFFSET :off";
 
-            $countQuery = "SELECT COUNT(*) as total FROM schools";
-            $countStmt = $this->db->connection->prepare($countQuery);
-            $countStmt->execute();
+                $stmt = $this->db->prepare($query);
+                foreach ([':s1', ':s2', ':s3', ':s4', ':s5', ':s6', ':s7'] as $param) {
+                    $stmt->bindValue($param, $searchPattern, PDO::PARAM_STR);
+                }
+                $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $countQuery = "SELECT COUNT(*) as total FROM schools 
+                              WHERE division_office LIKE :s1 
+                                 OR school_name LIKE :s2 
+                                 OR address LIKE :s3 
+                                 OR permit_no LIKE :s4 
+                                 OR program_offering LIKE :s5 
+                                 OR contact_person LIKE :s6
+                                 OR school_description LIKE :s7";
+                $countStmt = $this->db->prepare($countQuery);
+                foreach ([':s1', ':s2', ':s3', ':s4', ':s5', ':s6', ':s7'] as $param) {
+                    $countStmt->bindValue($param, $searchPattern, PDO::PARAM_STR);
+                }
+                $countStmt->execute();
+            } else {
+                $query = "SELECT * FROM schools ORDER BY {$sort} {$order} LIMIT :lim OFFSET :off";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                $schools = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $countQuery = "SELECT COUNT(*) as total FROM schools";
+                $countStmt = $this->db->prepare($countQuery);
+                $countStmt->execute();
+            }
+
+            $totalRecords = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            $totalPages = $limit > 0 ? ceil($totalRecords / $limit) : 1;
+
+            return [
+                'schools' => $schools,
+                'totalRecords' => $totalRecords,
+                'totalPages' => $totalPages,
+                'currentPage' => $page,
+                'limit' => $limit
+            ];
+        } catch (PDOException $e) {
+            error_log("PDO Error: " . $e->getMessage());
+            throw new Exception("Error fetching schools: " . $e->getMessage());
         }
-        
-        $totalRecords = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
-        $totalPages = $limit > 0 ? ceil($totalRecords / $limit) : 1;
-
-        return [
-            'schools' => $schools,
-            'totalRecords' => $totalRecords,
-            'totalPages' => $totalPages,
-            'currentPage' => $page,
-            'limit' => $limit
-        ];
-
-    } catch (PDOException $e) {
-        error_log("PDO Exception at line " . __LINE__);
-        error_log("Error message: " . $e->getMessage());
-        error_log("Error code: " . $e->getCode());
-        throw new Exception("Error fetching schools: " . $e->getMessage());
     }
-}
     /**
      * Get a single school by ID
      */
-    public function getSchoolById($id)
+   public function getSchoolById($id)
     {
-        try {
-            $query = "SELECT * FROM schools WHERE id = :id";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-            
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            throw new Exception("Error fetching school: " . $e->getMessage());
-        }
+        $stmt = $this->db->prepare("SELECT * FROM schools WHERE id = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-
     /**
      * Update school information
-     */
-    public function updateSchool($id, $data)
+     */    public function updateSchool($id, $data)
     {
-        try {
-            $updateFields = [];
-            $allowedFields = [
-                'division_office', 'school_name', 'address', 'permit_no', 'program_offering',
-                'contact_phone', 'contact_email', 'contact_person', 'school_description',
-                'school_history', 'mission_statement', 'vision_statement', 'founding_year',
-                'accreditation', 'recognition', 'website_url', 'facebook_url',
-                'student_population', 'faculty_count', 'facilities', 'achievements', 'school_logo'
-            ];
+        $allowedFields = [
+            'division_office', 'school_name', 'address', 'permit_no', 'program_offering',
+            'contact_phone', 'contact_email', 'contact_person', 'school_description',
+            'school_history', 'mission_statement', 'vision_statement', 'founding_year',
+            'accreditation', 'recognition', 'website_url', 'facebook_url',
+            'student_population', 'faculty_count', 'facilities', 'achievements', 'school_logo'
+        ];
 
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
-                    $updateFields[] = "{$field} = :{$field}";
-                }
-            }
-
-            if (empty($updateFields)) {
-                throw new Exception("No valid fields to update");
-            }
-
-            $query = "UPDATE schools SET " . implode(', ', $updateFields) . ", updated_at = NOW() WHERE id = :id";
-            
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
-                    $stmt->bindParam(":{$field}", $data[$field]);
-                }
-            }
-
-            return $stmt->execute();
-        } catch (Exception $e) {
-            throw new Exception("Error updating school: " . $e->getMessage());
+        $updateFields = [];
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) $updateFields[] = "{$field} = :{$field}";
         }
+
+        if (empty($updateFields)) throw new Exception("No valid fields to update");
+
+        $query = "UPDATE schools SET " . implode(', ', $updateFields) . ", updated_at = NOW() WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) $stmt->bindParam(":{$field}", $data[$field]);
+        }
+
+        return $stmt->execute();
     }
+
 
         /**
          * Get school count by division office
          */
-        public function getSchoolCountByDivision()
-        {
-            try {
-                $query = "SELECT division_office, COUNT(*) as school_count 
-                        FROM schools 
-                        GROUP BY division_office 
-                        ORDER BY school_count DESC, division_office ASC";
-                
-                $stmt = $this->db->connection->prepare($query);
-                $stmt->execute();
-                
-                return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (PDOException $e) {
-                error_log("getDivisionStats Error: " . $e->getMessage());
-                return [];
-            }
-        }
+         public function getSchoolCountByDivision()
+    {
+        $stmt = $this->db->prepare("
+            SELECT division_office, COUNT(*) as school_count 
+            FROM schools 
+            GROUP BY division_office 
+            ORDER BY school_count DESC, division_office ASC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     /**
      * Handle logo upload for a school
@@ -396,99 +341,73 @@ public function getSchools($params = [])
     /**
      * Create a new school
      */
-    public function createSchool($data)
+   public function createSchool($data)
     {
-        try {
-            $fields = [];
-            $values = [];
-            $allowedFields = [
-                'division_office', 'school_name', 'address', 'permit_no', 'program_offering',
-                'contact_phone', 'contact_email', 'contact_person', 'school_description',
-                'school_history', 'mission_statement', 'vision_statement', 'founding_year',
-                'accreditation', 'recognition', 'website_url', 'facebook_url',
-                'student_population', 'faculty_count', 'facilities', 'achievements'
-            ];
+        $allowedFields = [
+            'division_office', 'school_name', 'address', 'permit_no', 'program_offering',
+            'contact_phone', 'contact_email', 'contact_person', 'school_description',
+            'school_history', 'mission_statement', 'vision_statement', 'founding_year',
+            'accreditation', 'recognition', 'website_url', 'facebook_url',
+            'student_population', 'faculty_count', 'facilities', 'achievements'
+        ];
 
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field]) && $data[$field] !== '') {
-                    $fields[] = $field;
-                    $values[] = ":{$field}";
-                }
+        $fields = [];
+        $values = [];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field]) && $data[$field] !== '') {
+                $fields[] = $field;
+                $values[] = ":{$field}";
             }
-
-            if (empty($fields)) {
-                throw new Exception("No valid data provided");
-            }
-
-            $query = "INSERT INTO schools (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ")";
-            
-            $stmt = $this->db->connection->prepare($query);
-            
-            foreach ($fields as $field) {
-                if (isset($data[$field])) {
-                    $stmt->bindParam(":{$field}", $data[$field]);
-                }
-            }
-
-            $stmt->execute();
-            return $this->db->connection->lastInsertId();
-        } catch (Exception $e) {
-            throw new Exception("Error creating school: " . $e->getMessage());
         }
+
+        if (empty($fields)) throw new Exception("No valid data provided");
+
+        $query = "INSERT INTO schools (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ")";
+        $stmt = $this->db->prepare($query);
+
+        foreach ($fields as $field) {
+            $stmt->bindParam(":{$field}", $data[$field]);
+        }
+
+        $stmt->execute();
+        return $this->db->lastInsertId();
     }
 
     /**
      * Delete a school
      */
-    public function deleteSchool($id)
+   public function deleteSchool($id)
     {
-        try {
-            $query = "DELETE FROM schools WHERE id = :id";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            
-            return $stmt->execute();
-        } catch (Exception $e) {
-            throw new Exception("Error deleting school: " . $e->getMessage());
-        }
+        $stmt = $this->db->prepare("DELETE FROM schools WHERE id = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     /**
      * Get school statistics
      */
-    public function getStatistics()
+   public function getStatistics()
     {
-        try {
-            $stats = [];
+        $stats = [];
 
-            // Total schools
-            $query = "SELECT COUNT(*) as total FROM schools";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->execute();
-            $stats['total_schools'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM schools");
+        $stmt->execute();
+        $stats['total_schools'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-            // Schools by program offering
-            $query = "SELECT program_offering, COUNT(*) as count FROM schools GROUP BY program_offering ORDER BY count DESC";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->execute();
-            $stats['by_program'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->db->prepare("SELECT program_offering, COUNT(*) as count FROM schools GROUP BY program_offering ORDER BY count DESC");
+        $stmt->execute();
+        $stats['by_program'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Schools by division office
-            $query = "SELECT division_office, COUNT(*) as count FROM schools GROUP BY division_office ORDER BY count DESC";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->execute();
-            $stats['by_division'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->db->prepare("SELECT division_office, COUNT(*) as count FROM schools GROUP BY division_office ORDER BY count DESC");
+        $stmt->execute();
+        $stats['by_division'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Average founding year
-            $query = "SELECT AVG(founding_year) as avg_year FROM schools WHERE founding_year IS NOT NULL";
-            $stmt = $this->db->connection->prepare($query);
-            $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            $stats['avg_founding_year'] = $result['avg_year'] ? round($result['avg_year']) : null;
+        $stmt = $this->db->prepare("SELECT AVG(founding_year) as avg_year FROM schools WHERE founding_year IS NOT NULL");
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stats['avg_founding_year'] = $result['avg_year'] ? round($result['avg_year']) : null;
 
-            return $stats;
-        } catch (Exception $e) {
-            throw new Exception("Error getting statistics: " . $e->getMessage());
-        }
+        return $stats;
     }
 }

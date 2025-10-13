@@ -2,7 +2,7 @@
 // controller/listing.php
 require_once 'models/SchoolQuery.php';
 
-$schoolQuery = new SchoolQuery($db);
+$schoolQuery = new SchoolQuery($pdo);
 
 // Get schools list
 $result = $schoolQuery->getSchools([

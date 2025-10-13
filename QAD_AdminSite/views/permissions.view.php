@@ -188,7 +188,7 @@ require_once 'partials/admin_head.php';
                     <p class="text-sm text-gray-600 mb-4">
                         Return to <strong id="returnUserName"></strong> with feedback for revision.
                     </p>
-                    <form id="returnForm" method="POST">
+                    <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                         <input type="hidden" name="action" value="return">
                         <input type="hidden" name="permission_id" id="returnPermissionId">
@@ -217,7 +217,7 @@ require_once 'partials/admin_head.php';
                     <p class="text-sm text-gray-600 mb-4">
                         Permanently deny <strong id="denyUserName"></strong>. They cannot resubmit.
                     </p>
-                    <form id="denyForm" method="POST">
+                    <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                         <input type="hidden" name="action" value="deny">
                         <input type="hidden" name="permission_id" id="denyPermissionId">
@@ -283,6 +283,7 @@ require_once 'partials/admin_head.php';
     </div>
     
     <script>
+    // Return Modal Handlers
     document.querySelectorAll('.return-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('returnPermissionId').value = this.dataset.permissionId;
@@ -290,42 +291,113 @@ require_once 'partials/admin_head.php';
             document.getElementById('returnModal').classList.remove('hidden');
         });
     });
-    function closeReturnModal() { document.getElementById('returnModal').classList.add('hidden'); }
+    
+    function closeReturnModal() {
+        document.getElementById('returnModal').classList.add('hidden');
+    }
 
+    // Deny Modal Handlers - FIXED
     document.querySelectorAll('.deny-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('denyPermissionId').value = this.dataset.permissionId;
             document.getElementById('denyUserName').textContent = this.dataset.userName;
-            document.getElementById('denyModal').classList.add('hidden');
+            document.getElementById('denyModal').classList.remove('hidden'); // FIXED: was .add
         });
     });
-    function closeDenyModal() { document.getElementById('denyModal').classList.add('hidden'); }
+    
+    function closeDenyModal() {
+        document.getElementById('denyModal').classList.add('hidden');
+    }
 
+    // Extend Modal Handlers
     document.querySelectorAll('.extend-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('extendPermissionId').value = this.dataset.permissionId;
             document.getElementById('extendModal').classList.remove('hidden');
         });
     });
-    function closeExtendModal() { document.getElementById('extendModal').classList.add('hidden'); }
+    
+    function closeExtendModal() {
+        document.getElementById('extendModal').classList.add('hidden');
+    }
 
+    // Details Modal Handlers
     document.querySelectorAll('.view-details-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const p = JSON.parse(this.dataset.permission);
-            document.getElementById('permissionDetails').innerHTML = `
+            let html = `
                 <div class="space-y-4">
-                    <div><label class="text-sm font-medium text-gray-700">User:</label><p>${p.user_name} (${p.email})</p></div>
-                    <div><label class="text-sm font-medium text-gray-700">School:</label><p>${p.school_name}</p></div>
-                    <div><label class="text-sm font-medium text-gray-700">Reason:</label><p class="bg-gray-50 p-3 rounded">${p.reason || 'None'}</p></div>
-                    ${p.admin_remarks ? `<div class="bg-orange-50 border border-orange-200 rounded p-3"><label class="text-sm font-medium text-orange-800">Admin Feedback:</label><p class="text-orange-900 mt-1">${p.admin_remarks}</p></div>` : ''}
-                    <div><label class="text-sm font-medium text-gray-700">Status:</label><p>${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</p></div>
-                    ${p.approved_by_name ? `<div><label class="text-sm font-medium text-gray-700">Processed By:</label><p>${p.approved_by_name}</p></div>` : ''}
-                </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">User:</label>
+                        <p class="text-gray-900">${p.user_name} (${p.email})</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">School:</label>
+                        <p class="text-gray-900">${p.school_name}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Request Reason:</label>
+                        <p class="text-gray-900 bg-gray-50 p-3 rounded">${p.reason || 'No reason provided'}</p>
+                    </div>
             `;
+            
+            if (p.admin_remarks) {
+                html += `
+                    <div class="bg-orange-50 border border-orange-200 rounded p-3">
+                        <label class="text-sm font-medium text-orange-800">Admin Feedback:</label>
+                        <p class="text-orange-900 mt-1">${p.admin_remarks}</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Status:</label>
+                        <p class="text-gray-900">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Requested At:</label>
+                        <p class="text-gray-900">${new Date(p.requested_at).toLocaleString()}</p>
+                    </div>
+            `;
+            
+            if (p.approved_by_name) {
+                html += `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Processed By:</label>
+                        <p class="text-gray-900">${p.approved_by_name}</p>
+                    </div>
+                `;
+            }
+            
+            if (p.expires_at) {
+                html += `
+                    <div>
+                        <label class="text-sm font-medium text-gray-700">Expires At:</label>
+                        <p class="text-gray-900">${new Date(p.expires_at).toLocaleString()}</p>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            document.getElementById('permissionDetails').innerHTML = html;
             document.getElementById('detailsModal').classList.remove('hidden');
         });
     });
-    function closeDetailsModal() { document.getElementById('detailsModal').classList.add('hidden'); }
+    
+    function closeDetailsModal() {
+        document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    // Close modals when clicking outside
+    ['returnModal', 'denyModal', 'extendModal', 'detailsModal'].forEach(modalId => {
+        document.getElementById(modalId)?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    });
     </script>
 </body>
-</html>
+</html

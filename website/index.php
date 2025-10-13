@@ -10,4 +10,4 @@ $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
 require_once 'config/db.php';
 
 // Include the router
-require 'router.php';
+require_once 'router.php';

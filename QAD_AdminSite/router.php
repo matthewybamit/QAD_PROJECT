@@ -16,6 +16,10 @@ $requiredFiles = [
     'utils/ValidationHelper.php'
 ];
 
+
+
+
+
 foreach ($requiredFiles as $file) {
     if (!file_exists($file)) {
         die("Required file not found: $file");
@@ -227,27 +231,21 @@ function handleSecurity($db, $adminAuth, $securityLog) {
     $securityManager->index();
 }
 function handleNotificationsAPI($db, $adminAuth) {
-    require_once 'controllers/NotificationsAPI.php';
+    require_once 'controller/NotificationsAPI.php';
     // The controller will handle the API request
     exit;
 }
 
 function handleUsers($db, $adminAuth) {
-    // Users management - to be implemented
-    $currentUser = $adminAuth->getCurrentUser();
-    $pageTitle = 'User Management';
-    $currentPage = 'users';
-    
-    echo "User management feature - Coming soon";
+    require_once 'controller/Users.php';
+    $adminUsers = new AdminUsers($db, $adminAuth);
+    $adminUsers->index();
 }
 
 function handleSchools($db, $adminAuth) {
-    // Schools management - to be implemented
-    $currentUser = $adminAuth->getCurrentUser();
-    $pageTitle = 'School Management';
-    $currentPage = 'schools';
-    
-    echo "School management feature - Coming soon";
+    require_once 'controller/Schools.php';
+    $adminSchools = new AdminSchools($db, $adminAuth);
+    $adminSchools->index();
 }
 
 function handleHealthCheck($db) {

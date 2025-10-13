@@ -1,7 +1,6 @@
 <?php
 // router.php - Updated: landing page instead of redirecting to login
 $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
-
 // var_dump($uri);
 // Define public routes (always accessible without login)
 $publicRoutes = [
@@ -119,29 +118,7 @@ if ($uri === '/request-permission' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Handle admin routes (with security checks)
-if (strpos($uri, '/admin/') === 0) {
-    require_once 'models/GoogleAuth.php';
-    require_once 'models/AdminSecurity.php';
-    
-    if (!GoogleAuth::isAdmin()) {
-        $_SESSION['error'] = 'Access denied.';
-        require 'controller/landing.php';
-        exit;
-    }
-    
-    $currentUser = GoogleAuth::getCurrentUser();
-    $adminSecurity = new AdminSecurity($db->connection);
-    
-    if (!$adminSecurity->verifyAdminAccess($currentUser['id'])) {
-        session_destroy();
-        require 'controller/landing.php';
-        exit;
-    }
-    
-    // Log admin access
-    $adminSecurity->logAdminActivity($currentUser['id'], 'page_access', "Accessed: $uri");
-}
+
 
 // Route to requested file
 if (array_key_exists($uri, $routings)) {
