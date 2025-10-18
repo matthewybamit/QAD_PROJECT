@@ -9,12 +9,12 @@ class Database {
     public $connection;
 
     public function __construct() {
-        $host = env('DB_HOST', 'localhost');
-        $port = env('DB_PORT', '3306');
-        $dbname = env('DB_NAME', 'myapp');
-        $charset = env('DB_CHARSET', 'utf8mb4');
-        $username = env('DB_USER', 'root');
-        $password = env('DB_PASS', '');
+        $host = env('DB_HOST', );
+        $port = env('DB_PORT', );
+        $dbname = env('DB_NAME', );
+        $charset = env('DB_CHARSET', );
+        $username = env('DB_USER', );
+        $password = env('DB_PASS', );
 
         $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset={$charset}";
 

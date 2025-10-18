@@ -7,12 +7,12 @@
     <div class="p-4">
         <nav class="mt-8">
             <div class="space-y-2">
-                <a href="/dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'dashboard') ? 'bg-gray-700 text-white' : '' ?>">
+                <a href="/admin/dashboard" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'dashboard') ? 'bg-gray-700 text-white' : '' ?>">
                     <i class="fas fa-tachometer-alt mr-3"></i>
                     <span>Dashboard</span>
                 </a>
 
-                <a href="/permissions" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'permissions') ? 'bg-gray-700 text-white' : '' ?>">
+                <a href="/admin/permissions" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'permissions') ? 'bg-gray-700 text-white' : '' ?>">
                     <i class="fas fa-key mr-3"></i>
                     <span>Permissions</span>
                     <?php if (isset($stats['pending_permissions']) && $stats['pending_permissions'] > 0): ?>
@@ -27,12 +27,12 @@
                     <span>Users</span>
                 </a> -->
 
-                <a href="/schools" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'schools') ? 'bg-gray-700 text-white' : '' ?>">
+                <a href="/admin/schools" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'schools') ? 'bg-gray-700 text-white' : '' ?>">
                     <i class="fas fa-school mr-3"></i>
                     <span>Schools</span>
                 </a>
 
-                <a href="/security" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'security') ? 'bg-gray-700 text-white' : '' ?>">
+                <a href="/admin/security" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors <?= ($currentPage === 'security') ? 'bg-gray-700 text-white' : '' ?>">
                     <i class="fas fa-shield-alt mr-3"></i>
                     <span>Security</span>
                     <?php if (isset($stats['security_incidents']) && $stats['security_incidents'] > 0): ?>

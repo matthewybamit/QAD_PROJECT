@@ -1,5 +1,5 @@
 <?php
-// index.php - Fixed version for direct PDO connection
+// index.php - FIXED VERSION with proper session timeout handling
 
 // Enhanced secure session configuration
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_samesite', 'Strict');
     ini_set('session.sid_length', 48);
     ini_set('session.sid_bits_per_character', 6);
-    ini_set('session.gc_maxlifetime', 1800); // 30 minutes
+    ini_set('session.gc_maxlifetime', 3600); // 60 minutes
     ini_set('session.gc_probability', 1);
     ini_set('session.gc_divisor', 100);
     
@@ -20,32 +20,46 @@ if (session_status() === PHP_SESSION_NONE) {
     
     session_start();
     
-    // Additional session security checks
+    // FIXED: Initialize session on first visit
     if (!isset($_SESSION['initiated'])) {
         session_regenerate_id(true);
         $_SESSION['initiated'] = true;
         $_SESSION['created'] = time();
-        $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $_SESSION['last_activity'] = time(); // ADDED: Track last activity
+        $_SESSION['user_agent_hash'] = hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? ''); // CHANGED: Use hash
         $_SESSION['remote_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
     }
     
-    // Session timeout check
-    if (isset($_SESSION['created']) && (time() - $_SESSION['created'] > 1800)) {
+    // FIXED: Check inactivity timeout (30 minutes of NO activity)
+    $inactivity_timeout = 1800; // 30 minutes
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_timeout)) {
+        // User was inactive for 30+ minutes
+        error_log("Session timeout due to inactivity: " . (time() - $_SESSION['last_activity']) . " seconds");
         session_unset();
         session_destroy();
         session_start();
-        $_SESSION['initiated'] = true;
-        $_SESSION['created'] = time();
+        $_SESSION['timeout_message'] = 'Your session expired due to inactivity. Please log in again.';
+        header('Location: /admin/login');
+        exit;
     }
     
-    // Basic session hijacking protection
-    if (isset($_SESSION['user_agent']) && $_SESSION['user_agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? '')) {
-        session_unset();
-        session_destroy();
-        error_log("Potential session hijacking attempt detected");
+    // FIXED: Update last activity time on EVERY request
+    $_SESSION['last_activity'] = time();
+    
+    // FIXED: Less strict session hijacking protection (using hash comparison)
+    if (isset($_SESSION['user_agent_hash'])) {
+        $current_hash = hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? '');
+        if ($_SESSION['user_agent_hash'] !== $current_hash) {
+            error_log("Potential session hijacking attempt detected - User agent changed");
+            session_unset();
+            session_destroy();
+            header('Location: /admin/login');
+            exit;
+        }
     }
     
-    // Regenerate session ID periodically (every 15 minutes)
+    // FIXED: Regenerate session ID periodically (every 15 minutes)
+    // But preserve session data!
     if (!isset($_SESSION['last_regeneration']) || time() - $_SESSION['last_regeneration'] > 900) {
         session_regenerate_id(true);
         $_SESSION['last_regeneration'] = time();
@@ -63,37 +77,20 @@ if (!headers_sent()) {
     }
 }
 
-// Error reporting based on environment
-if (file_exists('config/env.php')) {
-    require_once 'config/env.php';
-    if (env('APP_DEBUG', false)) {
-        error_reporting(E_ALL);
-        ini_set('display_errors', 1);
-    } else {
-        error_reporting(E_ERROR | E_PARSE);
-        ini_set('display_errors', 0);
-        ini_set('log_errors', 1);
-        ini_set('error_log', __DIR__ . '/logs/php_errors.log');
-    }
-} else {
-    die('Environment configuration not found. Please ensure .env file is properly configured.');
-}
-
-// Additional security headers
-if (!headers_sent()) {
-    header('X-Frame-Options: DENY');
-    header('X-Content-Type-Options: nosniff');
-    header('X-XSS-Protection: 1; mode=block');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-    
-    // Remove server information
-    header_remove('X-Powered-By');
-    header_remove('Server');
-    
-    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
-    }
-}
+// // Error reporting based on environment
+// if (file_exists('config/env.php')) {
+//     require_once 'config/env.php';
+//     if (env('APP_DEBUG', false)) {
+//         error_reporting(E_ALL);
+//         ini_set('display_errors', 1);
+//     } else {
+//         error_reporting(E_ERROR | E_PARSE);
+//         ini_set('display_errors', 0);
+//         ini_set('log_errors', 1);
+//         ini_set('error_log', __DIR__ . '/logs/php_errors.log');
+//     }
+// } else {
+//     die('Environment configuration not found. Please ensure .env file is properly configured.');
+// }
 
 require_once 'router.php';

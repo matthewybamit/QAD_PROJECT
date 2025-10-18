@@ -1,5 +1,6 @@
 <?php
-//router.php
+// router.php - Clean version with no duplicates
+
 // Load required files
 $requiredFiles = [
     'config/admin_db.php',
@@ -8,17 +9,13 @@ $requiredFiles = [
     'models/SecurityLog.php',
     '../website/models/SchoolEditPermissions.php',
     'middleware/SecurityHeadersMiddleware.php',
-    'middleware/AdminAuthMiddleware.php',
-    'middleware/CSRFMiddleware.php',
-    'middleware/RateLimitMiddleware.php',
     'middleware/IPWhitelistMiddleware.php',
+    'middleware/RateLimitMiddleware.php',
+    'middleware/CSRFMiddleware.php',
+    'middleware/AdminAuthMiddleware.php',
     'utils/SessionHelper.php',
     'utils/ValidationHelper.php'
 ];
-
-
-
-
 
 foreach ($requiredFiles as $file) {
     if (!file_exists($file)) {
@@ -33,27 +30,20 @@ $securityHeadersMiddleware->handle($_REQUEST, function($request) {
     return $request;
 });
 
-// Initialize database connection using your admin_db.php system
+// Initialize database connection
 try {
-    // The admin_db.php file sets up $db as a PDO connection directly
     if (!isset($db) || !($db instanceof PDO)) {
         throw new Exception('Database connection not available or invalid type');
     }
     
-    // Test database connection
     $db->query("SELECT 1");
     
-    // Initialize auth and logging with the PDO connection
-    $adminAuth = new AdminAuth($db);  // $db is already the PDO connection
+    $adminAuth = new AdminAuth($db);
     $securityLog = new SecurityLog($db);
     
 } catch (Exception $e) {
     error_log("Admin panel database error: " . $e->getMessage());
-    if (env('APP_DEBUG', false)) {
-        die("Database initialization failed: " . $e->getMessage());
-    } else {
-        die("Service temporarily unavailable. Please try again later.");
-    }
+    die(env('APP_DEBUG', false) ? "Database initialization failed: " . $e->getMessage() : "Service temporarily unavailable");
 }
 
 // Parse request path
@@ -63,7 +53,7 @@ $path = str_replace('/admin', '', $path);
 $path = rtrim($path, '/') ?: '/';
 
 // Define public routes (no authentication required)
-$publicRoutes = ['/login', '/health', '/maintenance'];
+$publicRoutes = ['/login', '/health'];
 
 // Apply middleware for protected routes
 if (!in_array($path, $publicRoutes)) {
@@ -94,7 +84,6 @@ if (!in_array($path, $publicRoutes)) {
         });
     } catch (Exception $e) {
         error_log("Middleware error: " . $e->getMessage());
-        // Middleware already handled the response, so we exit here
         exit;
     }
 }
@@ -104,286 +93,199 @@ try {
     switch ($path) {
         case '/':
         case '/dashboard':
-            handleDashboard($db, $adminAuth, $securityLog);
+            $currentUser = $adminAuth->getCurrentUser();
+            $stats = getDashboardStats($db);
+            $recentActivity = $securityLog->getRecentLogs(10);
+            $pendingPermissions = getPendingPermissions($db);
+            $pageTitle = 'Dashboard';
+            $currentPage = 'dashboard';
+            require_once 'controller/dashboard.php';
             break;
             
         case '/login':
-            handleLogin($db, $adminAuth);
+            // Redirect if already logged in
+            if ($adminAuth->validateSession()) {
+                $redirectUrl = $_SESSION['intended_url'] ?? '/admin/dashboard';
+                unset($_SESSION['intended_url']);
+                header("Location: $redirectUrl");
+                exit;
+            }
+            
+            $error = null;
+            
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                try {
+                    $email = ValidationHelper::validateEmail($_POST['email'] ?? '', 'Email');
+                    $password = ValidationHelper::validateRequired($_POST['password'] ?? '', 'Password');
+                    
+                    $user = $adminAuth->authenticateAdmin($email, $password);
+                    
+                    if ($user) {
+                        $redirectUrl = $_SESSION['intended_url'] ?? '/admin/dashboard';
+                        unset($_SESSION['intended_url']);
+                        header("Location: $redirectUrl");
+                        exit;
+                    } else {
+                        $error = 'Invalid credentials or account locked';
+                    }
+                    
+                } catch (InvalidArgumentException $e) {
+                    $error = $e->getMessage();
+                } catch (Exception $e) {
+                    error_log("Login error: " . $e->getMessage());
+                    $error = 'Login failed. Please try again.';
+                }
+            }
+            
+            $csrfToken = AdminSecurity::generateCSRFToken();
+            $pageTitle = 'Admin Login';
+            require_once 'views/login.view.php';
             break;
             
         case '/logout':
-            handleLogout($db, $adminAuth);
-            break;
+            require_once 'controller/Logout.php';
+            $adminLogout = new AdminLogout($db, $adminAuth);
+            $adminLogout->handle();
+            exit;
             
         case '/permissions':
-            handlePermissions($db, $adminAuth);
+            require_once 'controller/Permission.php';
+            $permissionManager = new PermissionManager($db, $adminAuth);
+            $permissionManager->index();
             break;
             
         case '/security':
-            handleSecurity($db, $adminAuth, $securityLog);
+            require_once 'controller/SecurityManager.php';
+            $securityManager = new SecurityManager($db, $adminAuth);
+            $securityManager->index();
             break;
             
         case '/users':
-            handleUsers($db, $adminAuth);
+            require_once 'controller/Users.php';
+            $adminUsers = new AdminUsers($db, $adminAuth);
+            $adminUsers->index();
             break;
             
         case '/schools':
-            handleSchools($db, $adminAuth);
+            require_once 'controller/Schools.php';
+            $adminSchools = new AdminSchools($db, $adminAuth);
+            $adminSchools->index();
             break;
             
         case '/health':
-            handleHealthCheck($db);
-            break;
-            
-        case '/api/extend-session':
-            handleExtendSession($adminAuth);
-            break;
-            
-        case '/api/security-status':
-            handleSecurityStatus($db, $adminAuth);
-            break;
+            header('Content-Type: application/json');
+            try {
+                $db->query("SELECT 1");
+                $dbStatus = 'connected';
+            } catch (Exception $e) {
+                $dbStatus = 'error';
+            }
+            echo json_encode([
+                'status' => $dbStatus === 'connected' ? 'ok' : 'error',
+                'timestamp' => date('c'),
+                'database' => $dbStatus,
+                'version' => '1.0.0',
+                'environment' => env('APP_ENV', 'unknown')
+            ], JSON_PRETTY_PRINT);
+            exit;
             
         default:
-            handle404();
+            http_response_code(404);
+            if (env('APP_DEBUG', false)) {
+                echo "404 - Route not found: " . $_SERVER['REQUEST_URI'];
+            } else {
+                ?>
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>404 - Page Not Found</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                            background: #f3f4f6;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                            padding: 1rem;
+                        }
+                        .container-404 {
+                            max-width: 28rem;
+                            width: 100%;
+                            padding: 2rem;
+                            background: white;
+                            border-radius: 0.5rem;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                            text-align: center;
+                        }
+                        .title-404 {
+                            font-size: 3rem;
+                            font-weight: bold;
+                            color: #111827;
+                            margin-bottom: 1rem;
+                        }
+                        .text-404 {
+                            color: #6b7280;
+                            margin-bottom: 1.5rem;
+                        }
+                        .btn-404 {
+                            display: inline-block;
+                            background: #2563eb;
+                            color: white;
+                            padding: 0.5rem 1.5rem;
+                            border-radius: 0.375rem;
+                            text-decoration: none;
+                            transition: background 0.2s;
+                        }
+                        .btn-404:hover {
+                            background: #1d4ed8;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container-404 max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md text-center">
+                        <h1 class="title-404 text-4xl font-bold text-gray-900 mb-4">404</h1>
+                        <p class="text-404 text-gray-600 mb-6">Page not found</p>
+                        <a href="/admin/dashboard" class="btn-404 inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                            Go to Dashboard
+                        </a>
+                    </div>
+                </body>
+                </html>
+                <?php
+            }
             break;
     }
 } catch (Exception $e) {
     error_log("Route handling error: " . $e->getMessage());
-    if (env('APP_DEBUG', false)) {
-        die("Error: " . $e->getMessage());
-    } else {
-        http_response_code(500);
-        echo "Internal server error";
-    }
+    http_response_code(500);
+    echo env('APP_DEBUG', false) ? "Error: " . $e->getMessage() : "Internal server error";
 }
 
-// Route handler functions
-
-function handleDashboard($db, $adminAuth, $securityLog) {
-    $currentUser = $adminAuth->getCurrentUser();
-    $stats = getDashboardStats($db);
-    $recentActivity = $securityLog->getRecentLogs(10);
-    $pendingPermissions = getPendingPermissions($db);
-    
-    $pageTitle = 'Dashboard';
-    $currentPage = 'dashboard';
-    
-    require_once 'controller/dashboard.php';
-}
-
-function handleLogin($db, $adminAuth) {
-    // Redirect if already logged in
-    if ($adminAuth->validateSession()) {
-        $redirectUrl = $_SESSION['intended_url'] ?? '/dashboard';
-        unset($_SESSION['intended_url']);
-        header("Location: $redirectUrl");
-        exit;
-    }
-    
-    $error = null;
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        try {
-            $email = ValidationHelper::validateEmail($_POST['email'] ?? '', 'Email');
-            $password = ValidationHelper::validateRequired($_POST['password'] ?? '', 'Password');
-            
-            // Attempt authentication
-            $user = $adminAuth->authenticateAdmin($email, $password);
-            
-            if ($user) {
-                $redirectUrl = $_SESSION['intended_url'] ?? '/dashboard';
-                unset($_SESSION['intended_url']);
-                header("Location: $redirectUrl");
-                exit;
-            } else {
-                $error = 'Invalid credentials or account locked';
-            }
-            
-        } catch (InvalidArgumentException $e) {
-            $error = $e->getMessage();
-        } catch (Exception $e) {
-            error_log("Login error: " . $e->getMessage());
-            $error = 'Login failed. Please try again.';
-        }
-    }
-    
-    $csrfToken = AdminSecurity::generateCSRFToken();
-    $pageTitle = 'Admin Login';
-    
-    require_once 'views/login.view.php';
-}
-
-function handleLogout($db, $adminAuth) {
-    require_once 'controller/Logout.php';
-    $adminLogout = new AdminLogout($db, $adminAuth);
-    $adminLogout->handle();
-    exit;
-}
-function handlePermissions($db, $adminAuth) {
-    require_once 'controller/Permission.php';
-    $permissionManager = new PermissionManager($db, $adminAuth);
-    $permissionManager->index();
-}
-
-function handleSecurity($db, $adminAuth, $securityLog) {
-    require_once 'controller/SecurityManager.php';
-    $securityManager = new SecurityManager($db, $adminAuth);
-    $securityManager->index();
-}
-function handleNotificationsAPI($db, $adminAuth) {
-    require_once 'controller/NotificationsAPI.php';
-    // The controller will handle the API request
-    exit;
-}
-
-function handleUsers($db, $adminAuth) {
-    require_once 'controller/Users.php';
-    $adminUsers = new AdminUsers($db, $adminAuth);
-    $adminUsers->index();
-}
-
-function handleSchools($db, $adminAuth) {
-    require_once 'controller/Schools.php';
-    $adminSchools = new AdminSchools($db, $adminAuth);
-    $adminSchools->index();
-}
-
-function handleHealthCheck($db) {
-    header('Content-Type: application/json');
-    
-    try {
-        // Test database connection - $db is already the PDO connection
-        $db->query("SELECT 1");
-        $dbStatus = 'connected';
-    } catch (Exception $e) {
-        $dbStatus = 'error';
-    }
-    
-    $health = [
-        'status' => $dbStatus === 'connected' ? 'ok' : 'error',
-        'timestamp' => date('c'),
-        'database' => $dbStatus,
-        'version' => '1.0.0',
-        'environment' => env('APP_ENV', 'unknown')
-    ];
-    
-    echo json_encode($health, JSON_PRETTY_PRINT);
-    exit;
-}
-
-function handleExtendSession($adminAuth) {
-    header('Content-Type: application/json');
-    
-    if (!$adminAuth->validateSession()) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Unauthorized']);
-        exit;
-    }
-    
-    if ($adminAuth->extendSession()) {
-        echo json_encode(['success' => true, 'message' => 'Session extended']);
-    } else {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to extend session']);
-    }
-    exit;
-}
-
-function handleSecurityStatus($db, $adminAuth) {
-    header('Content-Type: application/json');
-    
-    if (!$adminAuth->validateSession()) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Unauthorized']);
-        exit;
-    }
-    
-    try {
-        // Get recent security alerts - $db is the PDO connection
-        $stmt = $db->prepare("
-            SELECT 
-                action,
-                COUNT(*) as count,
-                ip_address,
-                MAX(created_at) as last_occurrence
-            FROM security_logs 
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
-            AND action IN ('FAILED_LOGIN', 'IP_BLOCKED', 'CSRF_VIOLATION', 'RATE_LIMIT_EXCEEDED')
-            GROUP BY action, ip_address
-            HAVING count > 3
-            ORDER BY count DESC, last_occurrence DESC
-            LIMIT 10
-        ");
-        $stmt->execute();
-        $alerts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        echo json_encode([
-            'status' => 'ok',
-            'alerts' => $alerts,
-            'timestamp' => date('c')
-        ]);
-        
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Internal server error']);
-    }
-    exit;
-}
-
-function handle404() {
-    http_response_code(404);
-    
-    if (env('APP_DEBUG', false)) {
-        echo "404 - Route not found: " . $_SERVER['REQUEST_URI'];
-    } else {
-        ?>
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Page Not Found</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-            <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md text-center">
-                <h1 class="text-4xl font-bold text-gray-900">404</h1>
-                <p class="text-gray-600">Page not found</p>
-                <a href="/dashboard" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                    Go to Dashboard
-                </a>
-            </div>
-        </body>
-        </html>
-        <?php
-    }
-}
-
-// Helper functions
+// ==================== Helper Functions ====================
 
 function getDashboardStats($db) {
     try {
         $stats = [];
         
-        // Total users - $db is the PDO connection directly
         $stmt = $db->query("SELECT COUNT(*) as count FROM users");
         $stats['total_users'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
-        // Total schools
         $stmt = $db->query("SELECT COUNT(*) as count FROM schools");
         $stats['total_schools'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
-        // Pending permissions
         $stmt = $db->query("SELECT COUNT(*) as count FROM school_edit_permissions WHERE status = 'pending'");
         $stats['pending_permissions'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
-        // Active admin sessions
         $stmt = $db->query("SELECT COUNT(*) as count FROM admin_sessions WHERE expires_at > NOW()");
         $stats['active_sessions'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
         
-        // Security incidents today
         $stmt = $db->query("
-            SELECT COUNT(*) as count FROM security_logs 
+            SELECT COUNT(*) as count FROM admin_security_logs 
             WHERE DATE(created_at) = CURDATE() 
             AND action IN ('FAILED_LOGIN', 'IP_BLOCKED', 'CSRF_VIOLATION', 'RATE_LIMIT_EXCEEDED')
         ");
@@ -405,7 +307,6 @@ function getDashboardStats($db) {
 
 function getPendingPermissions($db) {
     try {
-        // $db is the PDO connection directly
         $stmt = $db->prepare("
             SELECT sep.*, u.name as user_name, u.email, s.school_name
             FROM school_edit_permissions sep
@@ -423,5 +324,3 @@ function getPendingPermissions($db) {
         return [];
     }
 }
-
-?>

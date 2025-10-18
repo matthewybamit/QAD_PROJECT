@@ -1,5 +1,5 @@
 <?php 
-// middleware/RateLimitMiddleware.php - Fixed version
+// middleware/RateLimitMiddleware.php - Fixed version with CSS fallback
 
 class RateLimitMiddleware {
     private $maxRequests;
@@ -40,42 +40,105 @@ class RateLimitMiddleware {
             } else {
                 http_response_code(429);
                 header('Retry-After: ' . $this->timeWindow);
-                ?>
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Rate Limit Exceeded</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
-                </head>
-                <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-                    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
-                        <div class="text-center">
-                            <div class="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-red-100">
-                                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">Rate Limit Exceeded</h2>
-                            <p class="mt-2 text-center text-sm text-gray-600">
-                                Too many requests from your IP address. Please wait <?= $this->timeWindow ?> seconds before trying again.
-                            </p>
-                            <div class="mt-6">
-                                <button onclick="window.history.back()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                    Go Back
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                <?php
+                $this->renderBlockedPage();
             }
             exit;
         }
         
         return $next($request);
+    }
+    
+    private function renderBlockedPage() {
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Rate Limit Exceeded</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    background: #f3f4f6;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    padding: 1rem;
+                }
+                .container {
+                    max-width: 28rem;
+                    width: 100%;
+                    padding: 2rem;
+                    background: white;
+                    border-radius: 0.5rem;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+                .text-center { text-align: center; }
+                .icon-wrapper {
+                    margin: 0 auto 1.5rem;
+                    height: 4rem;
+                    width: 4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    background: #fee2e2;
+                }
+                .icon {
+                    height: 2rem;
+                    width: 2rem;
+                    color: #dc2626;
+                }
+                h2 {
+                    margin-top: 1.5rem;
+                    font-size: 1.875rem;
+                    font-weight: bold;
+                    color: #111827;
+                }
+                .text-sm {
+                    margin-top: 0.5rem;
+                    font-size: 0.875rem;
+                    color: #4b5563;
+                }
+                .btn {
+                    margin-top: 1.5rem;
+                    width: 100%;
+                    background: #2563eb;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.375rem;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 1rem;
+                    transition: background 0.2s;
+                }
+                .btn:hover {
+                    background: #1d4ed8;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="text-center">
+                    <div class="icon-wrapper">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h2>Rate Limit Exceeded</h2>
+                    <p class="text-sm">
+                        Too many requests from your IP address. Please wait <?= $this->timeWindow ?> seconds before trying again.
+                    </p>
+                    <button onclick="window.history.back()" class="btn">
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
     }
     
     private function isAjaxRequest() {

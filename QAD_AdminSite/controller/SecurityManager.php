@@ -352,7 +352,7 @@ class SecurityManager {
             $stmt = $this->db->prepare("
                 SELECT iw.*, au.name as created_by_name 
                 FROM ip_whitelist iw
-                JOIN admin_users au ON iw.created_by = au.id
+                LEFT JOIN admin_users au ON iw.created_by = au.id
                 ORDER BY iw.created_at DESC
             ");
             $stmt->execute();

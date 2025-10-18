@@ -1,6 +1,5 @@
 <?php
-
-//middleware/IPWhitelistMiddleware.php - New middleware for IP restrictions
+// middleware/IPWhitelistMiddleware.php - Fixed version with CSS fallback
 
 class IPWhitelistMiddleware {
     public function handle($request, $next) {
@@ -26,40 +25,99 @@ class IPWhitelistMiddleware {
                 header('Content-Type: application/json');
                 echo json_encode(['error' => 'IP address not authorized']);
             } else {
-                ?>
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Access Denied</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
-                </head>
-                <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-                    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
-                        <div class="text-center">
-                            <div class="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-red-100">
-                                <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path>
-                                </svg>
-                            </div>
-                            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">Access Denied</h2>
-                            <p class="mt-2 text-center text-sm text-gray-600">
-                                Your IP address (<?= htmlspecialchars($clientIP) ?>) is not authorized to access this admin panel.
-                            </p>
-                            <p class="mt-4 text-xs text-gray-500">
-                                If you believe this is an error, please contact your administrator.
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                <?php
+                $this->renderBlockedPage($clientIP);
             }
             exit;
         }
         
         return $next($request);
+    }
+    
+    private function renderBlockedPage($clientIP) {
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Access Denied</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    background: #f3f4f6;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    padding: 1rem;
+                }
+                .container {
+                    max-width: 28rem;
+                    width: 100%;
+                    padding: 2rem;
+                    background: white;
+                    border-radius: 0.5rem;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+                .text-center { text-align: center; }
+                .icon-wrapper {
+                    margin: 0 auto 1.5rem;
+                    height: 4rem;
+                    width: 4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    background: #fee2e2;
+                }
+                .icon {
+                    height: 2rem;
+                    width: 2rem;
+                    color: #dc2626;
+                }
+                h2 {
+                    margin-top: 1.5rem;
+                    font-size: 1.875rem;
+                    font-weight: bold;
+                    color: #111827;
+                }
+                .text-sm {
+                    margin-top: 0.5rem;
+                    font-size: 0.875rem;
+                    color: #4b5563;
+                }
+                .text-xs {
+                    margin-top: 1rem;
+                    font-size: 0.75rem;
+                    color: #6b7280;
+                }
+                .ip-highlight {
+                    font-weight: 600;
+                    color: #dc2626;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="text-center">
+                    <div class="icon-wrapper">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
+                    </div>
+                    <h2>Access Denied</h2>
+                    <p class="text-sm">
+                        Your IP address (<span class="ip-highlight"><?= htmlspecialchars($clientIP) ?></span>) is not authorized to access this admin panel.
+                    </p>
+                    <p class="text-xs">
+                        If you believe this is an error, please contact your administrator.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
     }
     
     private function getClientIP() {
